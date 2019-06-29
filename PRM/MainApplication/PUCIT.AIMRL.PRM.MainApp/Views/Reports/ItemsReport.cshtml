@@ -1,0 +1,127 @@
+﻿@{
+    Layout = "~/Views/Shared/_MainLayout.cshtml";
+}
+@section Header
+{
+
+    <script type="text/javascript" src="@Url.Content("~/Scripts/mywebapp/Reports/mywebapp.ui.ItemsDataReport.js")"></script>
+    @Scripts.Render("~/bundles/ItemsDataReport")
+}
+@section scripts
+{
+    <script type="text/javascript">
+        $(document).ready(function () {
+            MyWebApp.UI.ItemsDataReport.readyMain();
+        });
+    </script>
+}
+@section BreadCrumb
+{
+    <li>
+        <a href='@Url.Content("~/Reports/")'>Reports</a>
+    </li>
+    <li>
+        <a href='@Url.Content("~/Reports/ItemsReport/")'>Items Report</a>
+    </li>
+}
+
+
+<div class="page-content">
+
+
+    <div class="page-header">
+        <h1 style="text-align:center;font-size:16px"><b>Items Report</b></h1><br />
+        <div class="space-4"></div>
+
+
+
+        <div class="row">
+
+            <div class="col-sm-2">
+                <label class="lbl">Login/Name</label>
+                <input id="login" type="text" class="input-sm form-control">
+            </div>
+
+            <div class="col-sm-2">
+                <label class="lbl">Start Date</label>
+                <input id="sdate" class="input-sm form-control" type="date" data-date-format="dd-mm-yyyy">
+            </div>
+            <div class="col-sm-2">
+                <label class="lbl">End Date</label>
+                <input id="edate" class="input-sm form-control" type="date" data-date-format="dd-mm-yyyy">
+            </div>
+
+            <div class="col-sm-2">
+                <label class="lbl">Item Name </label>
+                <select class="input-sm form-control" id="item_select">
+                    @*<option id="non" selected disabled>Choose Item</option>*@
+                </select>
+            </div>
+
+
+            <div class="col-sm-1" style="padding-top:25px">
+                <a href="#" class="btn-new-mail">
+                    <span class="btn btn-purple no-border" style="height: 30px; padding-bottom: 20px" id="search">
+                        <i class="ace-icon fa fa-search bigger-130"></i>
+                        <span>Search</span>
+                    </span>
+                </a>
+            </div>
+
+            
+
+
+
+        </div>
+
+    </div>
+    <br>
+
+
+    <div class="row">
+        <div class="col-xs-12">
+            <!-- PAGE CONTENT BEGINS -->
+            <div class="row">
+                <div class="col-xs-12">
+                    <div class="message-list-container">
+                        <div class="message-list" id="ItemStatuses">
+                            <table id="ItemSearch_table" class="table  table-bordered table-hover"></table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- /.row -->
+            <div class="hr hr-18 dotted hr-double"></div>
+
+        </div>
+    </div>
+
+</div>
+
+@section PopupsAndTemplates
+{
+    <script id="ItemSearchTemplate" type="text/x-handlebars-template">
+        <thead>
+            <tr id="#">
+                <th>Login</th>
+                <th>User Name</th>
+                <th>Item Name</th>
+                <th>Issued Quantity</th>
+
+            </tr>
+        </thead>
+        <tbody>
+            {{#each StatusList}}
+            <tr>
+
+                <td>{{Login}}</td>
+                <td>{{Name}}</td>
+                <td>{{ItemName}}</td>
+                <td>{{IssuedQty}}</td>
+
+            </tr>
+            {{/each}}
+        </tbody>
+    </script>
+}
+

@@ -1,0 +1,188 @@
+﻿@{
+    ViewBag.Title = "Index";
+    Layout = "~/Views/Shared/_HeaderLayout.cshtml";
+}
+@section Header
+{
+    @*<script type="text/javascript" src="@Url.Content("~/Scripts/mywebapp/Admin/mywebapp.ui.applicationworkflow.js")?s=@DateTime.UtcNow.Ticks"></script>*@
+    @Scripts.Render("~/bundles/applicationworkflow")
+}
+@section scripts
+{
+    <script type="text/javascript">
+        $(document).ready(function () {
+            MyWebApp.UI.ApplicationWorkflow.readyMain();
+        });
+    </script>
+    <style>
+        .sortabletable {
+            width: 99%;
+            margin: 5px;
+        }
+
+        .sortabletable, th, td {
+            border: 1px solid black;
+        }
+
+            .sortabletable tbody tr {
+                background-color: lightgray;
+            }
+    </style>
+}
+@section BreadCrumb
+{
+    <li>
+        <a href='@Url.Content("~/Admin/")'>Admin</a>
+    </li>
+    <li>
+        <a href='@Url.Content("~/Reports/ApplicationWorkFlow/")'>Form Workflows</a>
+    </li>
+}
+
+<div class="page-content">
+    <div class="page-header">
+        <h1>
+            Application Workflows
+        </h1>
+    </div>
+    <div class="row">
+        <div class="col-xs-12">
+            <!-- PAGE CONTENT BEGINS -->
+            <div class="row">
+                <div class="col-xs-12">
+                    <div class="message-list-container">
+                        <div class="message-list" id="Applications">
+                        </div>
+                    </div>
+                </div>
+            </div><!-- /.row -->
+        </div>
+    </div>
+</div><!-- PAGE CONTENT ENDS -->
+@section PopupsAndTemplates
+{
+    <div id="DesignationModals" tabindex="-1" class="modal" data-backdrop="static" data-keyboard="false">
+    <div class=" modal-dialog">
+        <div class="modal-content" style="width:700px">
+            <div class="modal-header">
+                <input type="hidden" id="hdFormId" value="0" />
+                <button type="button" class="close" data-dismiss="modal" id="closeedit">×</button>
+                <h4 class="primary bigger">Add Contributor</h4>
+            </div>
+            <div class="modal-body">
+
+                <div class="row">
+                    <div class="col-sm-12">
+                        <div class="col-sm-12">
+                            <label class="lbl">Choose Contributor</label>
+                            <input id="txtTextToSearch" type="text" class="input-sm form-control" placeholder="Type Name/Designation">
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="hr hr-18 dotted hr-single">
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-sm-12">
+                        <div class="col-sm-6">
+                            <label for="form-field-first"><b> Existing Contributors: </b></label>
+                        </div>
+                        <div class="col-sm-6" style="text-align:right">
+                            <label>Drag the following accordingly</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-sm-12">
+                        <div id="draggable" style="max-height:250px;overflow-y:auto">
+                            <table id="sortable22" class="sortabletable">
+                                <thead>
+                                    <tr>
+                                        <th>Order</th>
+                                        <th>Designation (Name)</th>
+                                        <th>Is New Campus</th>
+                                        <th>Is Old Campus</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-sm" data-dismiss="modal" id="Cancel" name="Cancel">
+                    <i class="ace-icon fa fa-times"></i>
+                    Cancel
+                </button>
+
+                <button class="btn btn-sm btn-primary" name="Save" id="Save">
+                    <i class="ace-icon fa fa-check"></i>
+                    Save
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+    <script id="ApplicationsTemplate" type="text/x-handlebars-template">
+        <div id="alldatacontainer">
+            <table id="simple-table" class="table  table-bordered table-hover">
+                <thead>
+                    <tr>
+                        <th class="center">#</th>
+                        <th class="center">Category</th>
+                        <th class="center" scope="col" width="5%">Manage Contributors</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{#each AppList}}
+                    <tr pid="{{CategoryID}}">
+                        <td align="center">{{CategoryID}}</td>
+                        <td align="center">{{Category}}</td>
+                        <td align="center" valign="middle">
+                            <div class="tblActions">
+                                <a href="#" value="{{CategoryID}}" role="button" data-toggle="modal" class="lnkManageWorkflows" title="Click to Add Contributers">
+                                    <i class="fa fa-user" value="{{CategoryID}}" aria-hidden="true"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {{/each}}
+                </tbody>
+            </table>
+        </div>
+    </script>
+
+    <script id="changeContributors12" type="text/x-handlebars-template">
+        {{#each FormContributersList}}
+        <tr class="ui-state-default" aid="{{ApproverID}}">
+            <td>{{ApprovalOrder}}</td>
+            <td>{{DesigWithName}}</td>
+            <td>
+                {{#ifEqual IsForNewCampus true}}
+                <input type="checkbox" checked class="isnewcampus" />
+                {{else}}
+                <input type="checkbox" class="isnewcampus" />
+                {{/ifEqual }}
+            </td>
+            <td>
+                {{#ifEqual IsForOldCampus true}}
+                <input type="checkbox" checked class="isoldcampus" />
+                {{else}}
+                <input type="checkbox" class="isoldcampus" />
+                {{/ifEqual }}
+            </td>
+            <td><i class="primary bigger btn-group pull-right bold icon-minus-sign red2" aria-hidden="true"></i></td>
+        </tr>
+        {{/each}}
+    </script>
+}
+
+
+
+
+

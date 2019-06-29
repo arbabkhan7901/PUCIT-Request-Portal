@@ -1,0 +1,295 @@
+GO
+
+SET IDENTITY_INSERT dbo.users ON
+
+
+insert into dbo.Users(UserId, Login, Password, Name, Title, Email, isActive, SignatureName, StdFatherName, Section, IsContributor, IsOldCampus)
+Select '8','test1','123','Mehwish Khurshid','Student Affairs Coordinator','bilal.shahzad@pucit.edu.pk','1','bfb541e6-f191-4f04-961c-f1881a3aaee4.jpg','ABC','BSIT (MORNING)','1','1' UNION ALL
+Select '1010','test2','123','Dr. Syed Masoor Sarwar','Principal','bilal.shahzad@pucit.edu.pk','1','d662d30f-949b-4525-96bb-337d1218891d.jpg','ABC','BSIT (MORNING)','1','1' UNION ALL
+Select '1015','test3','123','Amir Raza','Program Coordinator','bilal.shahzad@pucit.edu.pk','1','d662d30f-949b-4525-96bb-337d1218891d.jpg','ABC','BSIT (MORNING)','1','1' UNION ALL
+Select '1016','Asim Rasul','123','Asim Rasul','Exam Coordinator','bilal.shahzad@pucit.edu.pk','1','d662d30f-949b-4525-96bb-337d1218891d.jpg','ABC','BSIT (MORNING)','1','1' UNION ALL
+Select '1017','Shakeel','123','Shakeel','Admin Officer','bilal.shahzad@pucit.edu.pk','1','d662d30f-949b-4525-96bb-337d1218891d.jpg','ABC','BSIT (MORNING)','1','1' UNION ALL
+Select '1018','Adnan','123','Adnan','Assistant Treasurer','bilal.shahzad@pucit.edu.pk','1','d662d30f-949b-4525-96bb-337d1218891d.jpg','ABC','BSIT (MORNING)','1','1' UNION ALL
+Select '1019','Librarian','123','librarian','Librarian','bilal.shahzad@yahoo.com','1','d662d30f-949b-4525-96bb-337d1218891d.jpg','ABC','BSIT (MORNING)','1','1' UNION ALL
+Select '1020','BITF13M077','123','Sabah','','bilal.shahzad@yahoo.com','1','d662d30f-949b-4525-96bb-337d1218891d.jpg','ABC','BSIT (MORNING)','0','1' UNION ALL
+Select '1021','BITF13M005','123','Maryam','Student','bilal.shahzad@gmail.com','1','d662d30f-949b-4525-96bb-337d1218891d.jpg','ABC','BSIT (MORNING)','0','1' UNION ALL
+Select '1022','Secretary','123','Secretary DC','Secretary DC','bilal.shahzad@pucit.edu.pk','1','d662d30f-949b-4525-96bb-337d1218891d.jpg','ABC','BSIT (MORNING)','1','1' UNION ALL
+Select '1023','Rizwan','123','Rizwan','Network Admin','bilal.shahzad@pucit.edu.pk','1','d662d30f-949b-4525-96bb-337d1218891d.jpg','ABC','BSIT (MORNING)','1','1' UNION ALL
+SELECT 1025, N'Admin', '123', N'Admin', N'Admin', N'bilal.shahzad@pucit.edu.pk', 1, N'c59e908a-bffc-43c0-a865-6bd59e8c21f7.png', N'ABC', N'BSSE (AFTERNOON)', 0, 1 UNION ALL
+SELECT 55, N'teacher', '123', N'Mr. Mubasher', N'Teacher', N'bilal.shahzad@pucit.edu.pk', 1, N'c59e908a-bffc-43c0-a865-6bd59e8c21f7.png', N'ABC', N'', 1, 1
+
+SET IDENTITY_INSERT dbo.users OFF
+
+GO
+
+insert into dbo.FormCategories(CategoryID, Category, IsParalApprovalAllowed, IsRecievingAllowed,MaxPendingRequets, Instructions)
+Select '1','Clearance Form','1','0',1,'In order to apply for the clearance form it is necessary that your dues are paid and that you are clear of any charges from the accounts office or library.' UNION ALL
+Select '2','Leave Application Form','0','0',1,'You must have a legitimate reason when applying for the leave application form. In case there is a medical issue you must attach medical certificate as proof which should be verified by PU Medical Officer.
+Leave on medical ground will be governed as PUCIT statues and regulations.
+Leave will not be counted as presence towards attendance requirements.' UNION ALL
+Select '3','Option for Bsc Degree','0','0',1,'This is only available for students who have completed at least 2 years of their bachelor’s degree.' UNION ALL
+Select '4','Final Academic Transcript','0','1',1,'Student must attach copy of Clearance form, the final academic transcript will be issued on completion of degree.' UNION ALL
+Select '5','College ID Card Form ','0','1',1,'The college id card will be issued by paying prescribed fee of Rs.250/-. Add original receipt of challan form.' UNION ALL
+Select '6','Vehical Token Form','0','1',1,'You need to attach a copy  of your college id card, a copy of the vehicle’s registration and a photograph.' UNION ALL
+Select '7','Reciept of Orignal Documents ','0','1',1,'' UNION ALL
+Select '8','Bonafide Character Certificate ','0','1',1,'If you are applying for the bonafide certificate form before completion of your degree then you need to deposit Rs 250/- otherwise you dont have to pay any fee.' UNION ALL
+Select '9','Semester Freeze/Withdraw Form','0','0',1,'' UNION ALL
+Select '10','Semester Rejoin Form','0','0',1,'' UNION ALL
+Select '11','Semester Academic Transcript','0','0',1,'The semester (s) academic transcript will be issued by paying prescribed fee of Rs.250/-. Add original receipt of challan form' UNION ALL
+Select '12','Course Withdraw Form','0','0',1,'Maximum 50% courses of a semester can be withdrawn' UNION ALL
+Select '13','General Request Form','0','0',1,'Please write a suitable title for your request. In case there are any attachments, name them precisely.' 
+
+GO
+
+SET IDENTITY_INSERT dbo.Designations ON
+
+Insert into dbo.Designations(DesignationID,Designation,IsActive)
+select 1,'Student Affairs Coordinator',1 UNION ALL
+select 2,'Principal',1 UNION ALL
+select 3,'Program Coordinator',1 UNION ALL
+select 4,'Exam Coordinator',1 UNION ALL
+select 5,'Admin Officer',1 UNION ALL
+select 6,'Assistant Treasurer',1 UNION ALL
+select 7,'Librarian',1 UNION ALL
+select 8,'Secretary DC',1 UNION ALL
+select 9,'Network Admin',1 UNION ALL
+select 10,'Teacher',1
+
+
+SET IDENTITY_INSERT dbo.Designations OFF
+
+GO
+
+SET IDENTITY_INSERT dbo.Approvers ON
+
+Insert into dbo.Approvers(ApproverID, DesignationID, UserID, IsActive)
+
+Select '1','1',8,'1' UNION ALL
+Select '2','2',1010,'1' UNION ALL
+Select '3','3',1015,'1' UNION ALL
+Select '4','4',1016,'1' UNION ALL
+Select '5','5',1017,'1' UNION ALL
+Select '6','6',1018,'1' UNION ALL
+Select '7','7',1019,'1' UNION ALL
+Select '8','8',1022,'1' UNION ALL
+Select '9','9',1023,'1' UNION ALL
+Select '10','10',8,'1' UNION ALL
+Select 11,10,55,1
+
+SET IDENTITY_INSERT dbo.Approvers OFF
+
+
+GO
+
+
+SET IDENTITY_INSERT dbo.ApproverHierarchy ON
+
+insert into dbo.ApproverHierarchy(ID, FormID, ApproverID, ApprovalOrder, IsForNewCampus, IsForOldCampus)
+Select '1','1','1','7','0','1' UNION ALL
+Select '2','1','3','6','0','1' UNION ALL
+Select '3','1','4','5','0','1' UNION ALL
+Select '4','1','6','2','0','1' UNION ALL
+Select '5','1','7','3','0','1' UNION ALL
+Select '6','1','8','1','0','1' UNION ALL
+Select '7','1','9','4','0','1' UNION ALL
+Select '8','2','1','1','1','1' UNION ALL
+Select '9','2','2','2','0','1' UNION ALL
+Select '10','3','1','2','0','1' UNION ALL
+Select '11','3','4','1','0','1' UNION ALL
+Select '12','4','1','1','0','1' UNION ALL
+Select '13','4','2','2','0','1' UNION ALL
+Select '14','5','1','1','0','1' UNION ALL
+Select '15','5','5','2','0','1' UNION ALL
+Select '16','6','1','1','0','1' UNION ALL
+Select '17','6','5','2','0','1' UNION ALL
+Select '18','7','5','2','0','1' UNION ALL
+Select '19','7','6','1','0','1' UNION ALL
+Select '20','7','7','3','0','1' UNION ALL
+Select '21','8','1','1','0','1' UNION ALL
+Select '22','8','4','2','0','1' UNION ALL
+Select '23','8','5','3','0','1' UNION ALL
+Select '24','9','1','3','0','1' UNION ALL
+Select '25','9','2','4','0','1' UNION ALL
+Select '26','9','6','1','0','1' UNION ALL
+Select '27','9','7','2','0','1' UNION ALL
+Select '28','10','1','1','0','1' UNION ALL
+Select '29','10','1','3','0','1' UNION ALL
+Select '30','10','2','2','0','1' UNION ALL
+Select '31','11','4','1','0','1' UNION ALL
+Select '32','12','1','1','0','1' UNION ALL
+Select '33','13','1','1','0','1' UNION ALL
+Select '34','13','3','2','0','1' UNION ALL
+Select '35','2','3','2','1','0' 
+
+SET IDENTITY_INSERT dbo.ApproverHierarchy OFF
+
+
+GO
+
+
+
+SET IDENTITY_INSERT dbo.AttachmentTypes ON
+
+Insert into dbo.AttachmentTypes(AttachmentTypeID, typeName)
+Select '1','College ID Card' UNION ALL
+Select '2','Challan Form' UNION ALL
+Select '3','Medical' UNION ALL
+Select '4','Bonafide' UNION ALL
+Select '5','Applicant CNIC' UNION ALL
+Select '6','Clearance Form' UNION ALL
+Select '7','Motor Cycle Registration' UNION ALL
+Select '8','Photograph' UNION ALL
+Select '9','Other' UNION ALL
+Select '10','Father''s CNIC'
+
+SET IDENTITY_INSERT dbo.AttachmentTypes OFF
+
+
+GO
+
+
+SET IDENTITY_INSERT dbo.Permissions ON
+
+Insert into dbo.Permissions(Id, Name, Description)
+Select '1','canWriteApplication','can write application' UNION ALL
+Select '2','canEditApplication','can edit application before submission' UNION ALL
+Select '3','canApproveApplication','can approve application' UNION ALL
+Select '4','canRejectApplication','can reject application' UNION ALL
+Select '5','canAddContributor','can add contributor' UNION ALL
+Select '6','canPrintApplication','can print application' UNION ALL
+Select '7','canGiveRemarks','can give remarks/comments on application' UNION ALL
+Select '8','perCanProvideSignature','A user can upload signture file if he has this per' UNION ALL
+Select '9','perCanForwardApplication','A user can use "forward" button to send/forward ap' UNION ALL
+Select '10','perCanAccessAttachedDocs','A user can access the documents attached with an a' UNION ALL
+Select '11','perAccessToAppsOtherThanSelfAssigned','A user can access applications which are neither c' UNION ALL
+Select '13','perAccessToAssignedApps','A user can access applications assigned to him' UNION ALL
+Select '15','perAccessToSelfCreatedApps','A user can access applications created by himself' UNION ALL
+Select '16','PerCanHandleRecieving','Can do reciecing activity' UNION ALL
+Select '17','PerCanAllowApplicationEditing','PerCanAllowApplicationEditing' UNION ALL
+Select '18','PerCanRouteBack','PerCanRouteBack' UNION ALL
+Select '19','PerUpdateBonaFiedCGPA','PerUpdateBonaFiedCGPA' UNION ALL
+SELECT 26, N'perAccessToAllApps', N'Admin can access all apps' UNION ALL
+SELECT 27, N'perCanAccessAdminViews', N'Admin can access its views' UNION ALL
+SELECT 28, N'perCanLoginAsOtherUser', N'Admin can login as other user' UNION ALL
+Select '29','perManageSecurityUsers','' UNION ALL
+Select '30','perManageSecurityRoles','' UNION ALL
+Select '31','perManageSecurityPermissions','' UNION ALL
+Select '32','perViewLoginHistoryReport','' UNION ALL
+Select '33','perManageWorkFlows','' UNION ALL
+Select '34','perViewApplicationCountStatuswise','' UNION ALL
+Select '35','perDecideBehalfOnOtherUser','' UNION ALL
+Select 36, 'perCanSwapRequestAssignmentWithApprover',''
+SET IDENTITY_INSERT dbo.Permissions OFF
+
+
+
+SET IDENTITY_INSERT dbo.Roles ON
+
+INSERT INTO dbo.Roles(Id, Name, Description,CreatedBy,CreatedOn)
+Select '1','Student','who submits application',1,GetUtCDate() UNION ALL
+Select '3','contributor','who takes action on application',1,GetUtCDate() UNION ALL
+Select '4','Teacher','ddd',1,GetUtCDate() UNION ALL
+SELECT '17','Admin','',1,GetUtCDate() UNION ALL
+SELECT 1001,'SuperContributor', 'Extra Permissions',1,GetUtCDate()
+SET IDENTITY_INSERT dbo.Roles OFF
+
+
+GO
+
+
+SET IDENTITY_INSERT [dbo].[PermissionsMapping] ON
+
+INSERT INTO [dbo].[PermissionsMapping](Id, RoleId, PermissionId)
+Select '1','1','1' UNION ALL
+Select '2','1','2' UNION ALL
+Select '3','1','6' UNION ALL
+Select '4','3','3' UNION ALL
+Select '5','3','4' UNION ALL
+Select '6','3','5' UNION ALL
+Select '7','3','6' UNION ALL
+Select '8','3','7' UNION ALL
+Select '9','3','8' UNION ALL
+Select '10','3','9' UNION ALL
+Select '11','3','10' UNION ALL
+Select '12','3','13' UNION ALL
+Select '13','1','15' UNION ALL
+Select '14','3','16' UNION ALL
+Select '15','3','17' UNION ALL
+Select '16','3','18' UNION ALL
+Select '17','3','19' UNION ALL
+Select '18','4','3' UNION ALL
+Select '19','4','4' UNION ALL
+Select '20','4','5' UNION ALL
+Select '21','4','6' UNION ALL
+Select '22','4','7' UNION ALL
+Select '23','4','8' UNION ALL
+Select '24','4','9' UNION ALL
+Select '25','4','10' UNION ALL
+Select '26','4','13' UNION ALL
+Select '27','4','16' UNION ALL
+SELECT 206, 17, 26 UNION ALL
+SELECT 207, 17, 27 UNION ALL
+SELECT 208, 17, 28 UNION ALL
+Select 209,'17','29' UNION ALL
+Select 210,'17','30' UNION ALL
+Select 211,'17','31' UNION ALL
+Select 212,'17','32' UNION ALL
+Select 213,'17','33' UNION ALL
+Select 214,'17','34' UNION ALL
+Select 215,'17','35' UNION ALL
+Select 216,'17','5' UNION ALL
+
+Select 1001,'1001','3' UNION ALL
+Select 1002,'1001','4' UNION ALL
+Select 1003,'1001','5' UNION ALL
+Select 1004,'1001','6' UNION ALL
+Select 1005,'1001','7' UNION ALL
+Select 1006,'1001','8' UNION ALL
+Select 1007,'1001','9' UNION ALL
+Select 1008,'1001','10' UNION ALL
+Select 1009,'1001','13' UNION ALL
+Select 1010,'1001','16' UNION ALL
+Select 1011,'1001','17' UNION ALL
+Select 1012,'1001','18' UNION ALL
+Select 1013,'1001','19' UNION ALL
+Select 1014,'1001','29' UNION ALL
+Select 1015,'1001','33' UNION ALL
+Select 1016, 3, 36
+SET IDENTITY_INSERT [dbo].[PermissionsMapping] OFF
+
+
+
+
+
+
+GO
+
+INSERT [dbo].[StatusTypes] ([StatusTypeID], [StatusType]) VALUES (1, N'Not Assigned yet')
+INSERT [dbo].[StatusTypes] ([StatusTypeID], [StatusType]) VALUES (2, N'Pending')
+INSERT [dbo].[StatusTypes] ([StatusTypeID], [StatusType]) VALUES (3, N'Accepted')
+INSERT [dbo].[StatusTypes] ([StatusTypeID], [StatusType]) VALUES (4, N'Rejected')
+INSERT [dbo].[StatusTypes] ([StatusTypeID], [StatusType]) VALUES (5, N'N/A')
+INSERT [dbo].[StatusTypes] ([StatusTypeID], [StatusType]) VALUES (6, N'New Application')
+
+
+GO
+
+
+
+
+Insert into [dbo].[UserRoles](UserId, RoleId)
+SELECT 8,3 UNION ALL
+SELECT 1010,3 UNION ALL
+SELECT 1015,3 UNION ALL
+SELECT 1016,3 UNION ALL
+SELECT 1017,3 UNION ALL
+SELECT 1018,3 UNION ALL
+SELECT 1019,3 UNION ALL
+SELECT 1022,3 UNION ALL
+SELECT 1023,3 UNION ALL
+SELECT 7,1 UNION ALL
+SELECT 1020,1 UNION ALL
+SELECT 1021,1 UNION ALL
+SELECT 1025,17 UNION ALL
+SELECT 55,4
+GO

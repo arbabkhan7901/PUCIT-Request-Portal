@@ -1,0 +1,169 @@
+﻿@{
+    Layout = null;
+}
+
+<div id="vehicleToken" style="display:none">
+    <div class="row">
+        <div class="space-4"></div>
+        <div style="padding-left:50px;">
+            <div class="col-md-3">
+            </div>
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label for="form-field-username"><b>Name: </b> </label>
+                    <label id="name" for="form-field-username">@ViewBag.Name</label>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label for="form-field-first"><b>Roll No: </b></label>&nbsp;
+                <label id="rollNo" class="text" for="form-field-first">@ViewBag.RollNo</label>
+            </div>
+            <div class="col-md-3">
+            </div>
+            <div class="space-4"></div>
+            <div class="space-4"></div>
+        </div>
+    </div>
+    <div class="row">
+        <div style="padding-left:50px;">
+            <div class="col-md-3">
+            </div>
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label class="asterisk" for="form-field-username"><b>Current Semester: </b> </label>
+                    <div id="v_semester"></div>
+                    <select class="input-sm form-control" id="vehicleToken_semester" autofocus>
+                        <option id="vehicle_non" selected disabled>Choose one</option>
+                        <option id="one">1</option>
+                        <option id="2nd">2</option>
+                        <option id="3rd">3</option>
+                        <option id="4th">4</option>
+                        <option id="5th">5</option>
+                        <option id="6th">6</option>
+                        <option id="7th">7</option>
+                        <option id="8th">8</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label class="asterisk" for="form-field-username"><b>Section: </b> </label>
+                    <label for="form-field-username">@ViewBag.Section</label>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="space-4"></div>
+    <div class="space-4"></div>
+    <div class="row">
+        <div style="padding-left:50px;">
+            <div class="col-md-3">
+            </div>
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label class="asterisk" for="form-field-first"><u><b>Motorcycle Specifications: </b></u></label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div style="padding-left:50px;">
+            <div class="col-md-3">
+            </div>
+            <div class="col-md-3">
+                <label class="asterisk" for="form-field-username"><b>Model: </b></label>
+                <div id="v_model"></div>
+                <input id="vehicle_model" type="text" class="input-sm form-control"><br />
+            </div>
+            <div class="col-md-3">
+                <label class="asterisk" for="form-field-username"><b>Registration No: </b></label>
+                <div id="v_Reg"></div>
+                <input id="vehicle_regNo" type="text" class="input-sm form-control"><br />
+            </div>
+            <div class="space-4"></div>
+            <div class="space-4"></div>
+
+            <div class="col-md-3">
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div style="padding-left:50px;">
+            <div class="col-md-3">
+            </div>
+            <div class="col-md-3">
+                <label class="asterisk" for="form-field-username"><b>Manufacturer: </b></label>
+                <div id="v_manu"></div>
+                <input id="vehicle_manufacturer" type="text" class="input-sm form-control"><br />
+            </div>
+            <div class="col-md-3">
+                <label class="asterisk" for="form-field-username"><b>Owners Name: </b></label>
+                <div id="v_owner"></div>
+                <input id="vehicle_ownersName" type="text" class="input-sm form-control"><br />
+            </div>
+            <div class="col-md-3">
+            </div>
+        </div>
+    </div>
+    <div class="space-4"></div>
+    <div class="space-4"></div>
+    <div class="row">
+        <div style="padding-left:50px;">
+            <div class="col-md-3">
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="form-field-username"><b>Reason: </b></label>
+
+                    <textarea id="vehicle_reason" class="form-control" maxlength="200" rows="6"></textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="space-4"></div>
+    <div class="space-4"></div>
+    <div class="row">
+        <div style="padding-left:50px;">
+            <div class="col-md-3">
+            </div>
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label class="asterisk" for="form-field-username"><b>Attachments:  (.jpg, .gif, .png)</b></label>
+                    <ul>
+                        <li>
+                            Colored Photograph
+                            <div class="space-4"></div>
+                            <div id="v_photo"></div>
+                            <input type="file" id="vehicle_photo" />
+                        </li>
+
+                        <li>
+                            Motorcycle Registration Attested Copy
+                            <div class="space-4"></div>
+                            <div id="v_register"></div>
+                            <input type="file" id="vehicle_registration" />
+                        </li>
+
+                        <li>
+                            College ID Card
+                            <div class="space-4"></div>
+                            <div id="v_IDcard"></div>
+                            <input type="file" id="vehicleIDcard" />
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div class="col-md-3">
+            </div>
+        </div>
+    </div>
+    <div>
+        <div class="col-md-9"></div>
+        <div class="col-md-3">
+            <div class="pull-right">
+                <i><font color="red">* </font>Indicates required fields.</i>
+            </div>
+        </div>
+    </div>
+</div>

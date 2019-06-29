@@ -1,0 +1,143 @@
+﻿@{
+    Layout = null;
+}
+
+<div id="semesterAcademic" style="display:none">
+    <div class="row">
+        <div class="space-4"></div>
+        <div style="padding-left:50px;">
+            <div class="col-md-3">
+            </div>
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label for="form-field-username"><b>Name: </b> </label>
+                    <label id="name" for="form-field-username">@ViewBag.Name</label>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label for="form-field-first"><b>Roll No: </b></label>&nbsp;
+                <label id="rollNo" class="text" for="form-field-first">@ViewBag.RollNo</label>
+            </div>
+            <div class="col-md-3">
+            </div>
+            <div class="space-4"></div>
+            <div class="space-4"></div>
+        </div>
+    </div>
+    <div class="row">
+        <div style="padding-left:50px;">
+            <div class="col-md-3">
+            </div>
+            <div class="col-md-3">
+                <label class="asterisk" for="form-field-username"><b>Father's Name:</b></label>
+                <div id="a_fname"></div>
+                <label for="form-field-username">@ViewBag.FatherName</label>
+            </div>
+            <div class="col-md-3">
+                <label class="asterisk" for="form-field-username"><b>Section:</b></label><br />
+                <label for="form-field-username">@ViewBag.Section</label>
+            </div>
+        </div>
+    </div>
+    <div class="space-4"></div>
+    <div class="row">
+        <div style="padding-left:50px;">
+            <div class="col-md-3">
+            </div>
+            <div class="col-md-3">
+                <label class="asterisk" for="form-field-username"><b>Challan Form No:</b></label>
+                <div id="a_challan"></div>
+                <input id="semesterAcademic_challan" placeholder="123456789_1" type="text" class="input-sm form-control"><br />
+            </div>
+            <div class="col-md-3">
+                <label class="asterisk" for="form-field-username"><b>Current Semester:</b></label><br />
+                <div id="a_semester"></div>
+                <select class="input-sm form-control" id="semesterAcademic_semester" autofocus>
+                    <option id="academic_non" selected disabled>Choose one</option>
+                    <option id="one">1</option>
+                    <option id="2nd">2</option>
+                    <option id="3rd">3</option>
+                    <option id="4th">4</option>
+                    <option id="5th">5</option>
+                    <option id="6th">6</option>
+                    <option id="7th">7</option>
+                    <option id="8th">8</option>
+                </select>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div style="padding-left:50px;">
+            <div class="col-md-3">
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <p>
+                        <font color="blue">Transcript Required For Semester(s)</font>
+                    </p>
+                    <div id="a_rsemeter"></div>
+                    <input id="semesterAcademic_semester1" name="acadsemester" type="radio" />1 &nbsp;
+                    <input id="semesterAcademic_semester2" name="acadsemester" type="radio" />2 &nbsp;
+                    <input id="semesterAcademic_semester3" name="acadsemester" type="radio" />3 &nbsp;
+                    <input id="semesterAcademic_semester4" name="acadsemester" type="radio" />4 &nbsp;
+                    <input id="semesterAcademic_semester5" name="acadsemester" type="radio" />5 &nbsp;
+                    <input id="semesterAcademic_semester6" name="acadsemester" type="radio" />6 &nbsp;
+                    <input id="semesterAcademic_semester7" name="acadsemester" type="radio" />7 &nbsp;
+                    <input id="semesterAcademic_semester8" name="acadsemester" type="radio" />8 &nbsp;
+                </div>
+            </div>
+            <div class="col-md-3">
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div style="padding-left:50px;">
+            <div class="col-md-3">
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="form-field-username"><b>Reason: </b></label>
+
+                    <textarea id="semesterAcademic_reason" class="form-control" maxlength="200" rows="6"></textarea>
+                </div>
+            </div>
+            <div class="space-4"></div>
+            <div class="space-4"></div>
+            <div class="col-md-3">
+            </div>
+            <div class="col-md-3">
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div style="padding-left:50px;">
+            <div class="col-md-3">
+            </div>
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label class="asterisk" for="form-field-username"><b>Attachments:   (.jpg, .gif, .png)</b></label>
+                    <ul>
+                        <li>
+                            Challan Form
+                            <div class="space-4"></div>
+                            <div id="a_challanForm"></div>
+                            <input type="file" id="semesterAcademic_reason_challan" />
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div class="col-md-3">
+            </div>
+            <div class="col-md-3">
+            </div>
+        </div>
+    </div>
+    <div>
+        <div class="col-md-9"></div>
+        <div class="col-md-3">
+            <div class="pull-right">
+                <i><font color="red">* </font>Indicates required fields.</i>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,768 @@
+@model PUCIT.AIMRL.PRM.Entities.ApplicationAccessData
+
+@{
+    Layout = "~/Views/Shared/_MainLayout.cshtml";
+}
+
+@section Header{
+
+    @*<script type="text/javascript" src="@Url.Content("~/Scripts/mywebapp/ApplicationView/mywebapp.ui.applicationview.js")?s=@DateTime.UtcNow.Ticks"></script>
+    <link rel="stylesheet" href="~/Content/jquery-ui.min.css" />*@
+   @Scripts.Render("~/bundles/applicationview")
+}
+@section scripts
+{
+<script type="text/javascript">
+    $(document).ready(function () {
+        MyWebApp.UI.ApplicationView.readyMain();
+    });
+</script>
+
+}
+@section BreadCrumb
+{
+<li>
+    <a href='@Url.Content("~/Home/")'>Home</a>
+</li>
+<li>
+    <a href='@Url.Content("~/Home/ApplicationView/")@ViewBag.id'>Application View </a>
+</li>
+<li>
+    <a href='@Url.Content("~/Home/ApplicationView/")@ViewBag.id'>@ViewBag.id </a>
+</li>
+}
+<div class="page-content">
+    <span class="active" id="ApplicationId" style="display:none">@ViewBag.id</span>
+    <span class="active" id="ApplicationUniqueId" style="display:none">@ViewBag.ReqUniqueId</span>
+    <div class="row">
+        <div class="col-xs-12">
+            <!-- PAGE CONTENT BEGINS -->
+
+            <div class="row">
+                <div class="col-xs-6 col-sm-3 pricing-box">
+                    <div class="widget-box widget-color-blue">
+                        <div class="widget-header">
+                            <h5 class="widget-title bigger" id="formtitle">Pending Application(s)</h5>
+                        </div>
+                        <div class="widget-body">
+                            <div class="widget-main">
+                                <table class="table table-bordered table-striped">
+                                    <thead class="thin-border-bottom">
+                                        <tr>
+                                            <th>
+                                                <i class="ace-icon fa fa-caret-right blue"></i>Application Name
+                                            </th>
+                                            <th class="hidden-480">
+                                                <i class="ace-icon fa fa-caret-right blue"></i>Date
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="PreviousApplications"></tbody>
+                                </table>
+                            </div><!-- /.widget-main -->
+                        </div><!-- /.widget-body -->
+                    </div><!-- /.widget-box -->
+                </div>
+                <div class="col-xs-6 col-sm-6 pricing-box">
+                    <div class="widget-box widget-color-blue">
+                        <div class="widget-header">
+                            <h5 class="widget-title bigger" id="formViewtitle"></h5>
+                        </div>
+                        <div class="widget-body">
+                            <div class="widget-body">
+                                <div class="widget-main">
+                                    <div class="widget-main">
+                                        <!--General Request Form-->
+                                        @Html.Partial("~/Views/Partial/ApplicationView/GeneralRequestForm.cshtml")
+
+                                        <div class="space-4"></div>
+
+                                        <!--Bonafide Form-->
+                                        @Html.Partial("~/Views/Partial/ApplicationView/BonafideForm.cshtml")
+
+                                        <div class="space-4"></div>
+                                        
+                                        <!--Clearance Form-->
+                                        @Html.Partial("~/Views/Partial/ApplicationView/ClearanceForm.cshtml")
+
+                                        <!--Option for BSC Degree Form-->
+                                        @Html.Partial("~/Views/Partial/ApplicationView/OptionforBscDegree.cshtml")
+
+                                        <!--Leave Application Form-->
+                                        @Html.Partial("~/Views/Partial/ApplicationView/LeaveApplicationForm.cshtml")
+
+                                        
+                                        <!--Final Academic Transcript Form-->
+                                        @Html.Partial("~/Views/Partial/ApplicationView/FinalAcademicTranscript.cshtml")
+
+                                        <!--College ID Card Form-->
+                                        @Html.Partial("~/Views/Partial/ApplicationView/CollegeIDCardForm.cshtml")
+
+                                        <!--Reciept of Orignal Documents-->
+                                        @Html.Partial("~/Views/Partial/ApplicationView/RecieptOfOrignalDocuments.cshtml")
+
+                                        <!--Vehical Token Form-->
+                                        @Html.Partial("~/Views/Partial/ApplicationView/VehicalTokenForm.cshtml")
+
+                                        <!--Semester Freeze/Withdraw Form-->
+                                        @Html.Partial("~/Views/Partial/ApplicationView/SemesterFreeze_WithdrawForm.cshtml")
+
+                                        <!--Semester Rejoin Form-->
+                                        @Html.Partial("~/Views/Partial/ApplicationView/SemesterRejoinForm.cshtml")
+
+                                        <!-- Semester Academic Transcript-->
+                                        @Html.Partial("~/Views/Partial/ApplicationView/SemesterAcademicTranscript.cshtml")
+
+                                        <!-- Course Withdraw Form-->
+                                        @Html.Partial("~/Views/Partial/ApplicationView/CourseWithdrawForm.cshtml")
+
+                                        <!--Item Demand Requisition Form -->
+                                        @Html.Partial("~/Views/Partial/ApplicationView/ItemDemandRequisitionForm.cshtml")
+
+                                        <!-- Hardware Request Form -->
+                                        @Html.Partial("~/Views/Partial/ApplicationView/HardwareRequestForm.cshtml")
+
+                                        <!-- Demand Voucher Form -->
+                                        @Html.Partial("~/Views/Partial/ApplicationView/DemandVoucherForm.cshtml")
+
+                                        <!-- Store Demand Voucher Form -->
+                                        @Html.Partial("~/Views/Partial/ApplicationView/StoreDemandVoucherForm.cshtml")
+
+                                        <!-- Room Reservation Form -->
+                                        @Html.Partial("~/Views/Partial/ApplicationView/RoomReservationForm.cshtml")
+
+                                        <!-- LAB RESERVATION FORM -->
+                                        @Html.Partial("~/Views/Partial/ApplicationView/LabReservationForm.cshtml")
+                                      
+                                        <div class="row">
+                                            <div class="col-xs-12 col-sm-7" style="padding-left:10%">
+                                                <div id="reason_all" style="display:none">
+                                                    <div class="space-4"></div>
+                                                    <span class="blue"><label><b>Reason :</b></label></span>
+                                                </div>
+                                                <p id="reasonDisplay" style="width: 40em;word-wrap: break-word;"></p>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-xs-12 col-sm-12" style="padding-left:10%">
+                                                <span class="blue"><label id="heading_attachment" style="display:none"><b> Attachments :   </b></label></span>
+                                                <div id="AttachmentsDiv">
+                                                    <ol id="attachments" style="list-style-type:none"></ol>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        @if (Model.CanStdEditFlag)
+                                        {
+                                        <div class="row">
+                                            <div class="col-xs-12 col-sm-7" style="padding-left:10%">
+                                                <div class="widget-box" style="border:none;">
+                                                    <div id="divAddAttachment">
+                                                        <span class="blue"> <a href="#" id="lnkAddAttachment"><b>Add Attachment</b></a></span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        }
+                                    </div>
+                                    <div class="timeline-container">
+                                        <div class="timeline-label">
+                                            <span class="label label-primary arrowed-in-right label-lg">
+                                                <b>Activity Log</b>
+                                            </span>
+                                        </div>
+                                        <div id="timeline"></div>
+                                    </div><!-- /.timeline-container -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xs-4 col-sm-3 pricing-box">
+                    <div class="widget-box widget-color-blue">
+                        <div class="widget-header">
+                            <h5 class="widget-title bigger">Action Panel</h5>
+                        </div>
+                        <div class="widget-body">
+                            <div class="widget-main">
+                                <table class="table no-border">
+                                    <tr>
+                                        <td></td>
+                                        <td id="ReviewButton">
+                                            @if (PUCIT.AIMRL.PRM.UI.Common.SessionManager.CurrentUser.AppAccessType == PUCIT.AIMRL.PRM.Entities.Enum.ApplicationAccessType.SelfCreated)
+                                            {
+                                                <div class="btn-group">
+                                                    <button class="btn btn-sm btn-inverse btn-white btn-round" id="review" style="padding: 4px;width: 100px;">
+                                                        <i class="ace-icon fa fa-pencil bigger-110"></i>
+                                                        Review
+                                                    </button>
+                                                </div>
+                                            }
+                                        </td>
+                                    </tr>
+                                    @if (Model.IsPendingForCurrUser)
+                                    {
+                                        
+                                        <tr id="ActionButtons">
+                                            <td>
+                                                @if (PUCIT.AIMRL.PRM.MainApp.Security.PermissionManager.PerCanApproveApplication == true)
+                                                {
+                                                    <div class="btn-group" id="ApproveSection">
+                                                        <button class="btn btn-sm btn-white btn-inverse btn-round" id="approve" style="padding: 4px;width: 100px;">
+                                                            <i class="ace-icon fa fa-check bigger-110 green"></i>
+                                                            Approve
+                                                        </button>
+                                                    </div>
+                                                }
+                                            </td>
+                                            <td>
+                                                @if (PUCIT.AIMRL.PRM.MainApp.Security.PermissionManager.PerCanRejectApplication == true)
+                                                {
+                                                    <div class="btn-group" id="RejectSection">
+                                                        <button class="btn btn-sm btn-inverse btn-white btn-round" id="reject" style="padding: 4px;width: 100px;">
+                                                            <i class="ace-icon fa fa-times bigger-110 red2"></i>
+                                                            Reject
+                                                        </button>
+                                                    </div>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                        <tr>
+                                            <td id="RemarksButton">
+                                                @if (PUCIT.AIMRL.PRM.MainApp.Security.PermissionManager.PerCanGiveRemarks == true && Model.IsPendingForCurrUser)
+                                                {
+                                                    <div class="btn-group">
+                                                        <button class="btn btn-sm btn-inverse btn-white btn-round" id="remarks" style="padding: 4px;width: 100px;">
+                                                            <i class="ace-icon fa fa-pencil bigger-110"></i>
+                                                            Remarks
+                                                        </button>
+                                                    </div>
+                                                }
+                                            </td>                       
+                                            <td>
+                                                @if (PUCIT.AIMRL.PRM.MainApp.Security.PermissionManager.PerCanPrintApplication == true)
+                                                {
+                                                    <div class="btn-group">
+                                                        <button class="btn btn-sm btn-white btn-inverse btn-round" id="PrintButton" style="padding:4px;width:120px;">
+                                                            <i class="fa fa-download"></i>
+                                                            Download
+                                                        </button>
+                                                    </div>
+                                                }
+                                            </td>
+                                        </tr>
+                                    @if (PUCIT.AIMRL.PRM.MainApp.Security.PermissionManager.PerCanRouteBack == true && Model.RouteBackFlag)
+                                    {
+                                        <tr id="trRouteBack">
+                                            <td colspan="2">
+                                                <div class="btn-group">
+                                                    <button class="btn btn-sm btn-inverse btn-white btn-round" id="btnRouteBack" style="padding: 4px;width: 130px;">
+                                                        <i class="ace-icon fa fa-pencil bigger-110"></i>
+                                                        Route Back
+                                                    </button>
+                                                </div>
+                                        </tr>
+                                    }
+                                    @if (PUCIT.AIMRL.PRM.MainApp.Security.PermissionManager.PerCanHandleRecieving == true && Model.RecFlag)
+                                    {
+                                        <tr id="trRecieveData">
+                                            <td colspan="2">
+                                                <div class="btn-group">
+                                                    <button class="btn btn-sm btn-inverse btn-white btn-round" id="btnRecieve" style="padding: 4px;width: 100px;">
+                                                        <i class="ace-icon fa fa-pencil bigger-110"></i>
+                                                        Recieve
+                                                    </button>
+                                                </div>
+                                        </tr>
+                                    }
+                                    @if (PUCIT.AIMRL.PRM.MainApp.Security.PermissionManager.PerCanAllowApplicationEditing == true && Model.IsPendingForCurrUser)
+                                    {
+                                        <tr id="trEnableDisableEdit" status="0">
+                                            <td colspan="2">
+                                                <div class="btn-group">
+                                                    <button class="btn btn-sm btn-inverse btn-white btn-round" id="btnEnableDisable" style="padding: 4px;width: 240px;">
+                                                        <i class="ace-icon fa fa-pencil bigger-110"></i>
+                                                        <span>Attachments Editing</span>
+                                                    </button>
+                                                </div>
+                                        </tr>
+                                    }
+                                    @if (PUCIT.AIMRL.PRM.MainApp.Security.PermissionManager.perCanSwapRequestAssignmentWithApprover == true && Model.IsPendingForCurrUser)
+                                    {
+                                        <tr id="trSwapRequest" style="display:none">
+                                            <td colspan="2">
+
+                                                <br />
+                                                <div class="btn-group">
+                                                    <button class="btn btn-sm btn-inverse btn-white btn-round" id="btnSwapRequest" style="padding: 4px;width: 240px;">
+                                                        <i class="ace-icon fa fa-pencil bigger-110"></i>
+                                                        <span>Swap Approver</span>
+                                                    </button>
+                                                </div>
+                                        </tr>
+                                    }
+                                </table>
+                                <br />
+                                <div class="row">
+                                    <div class="col-sm-9">
+                                        <i class="ace-icon fa fa-users bigger-130 green"></i> &nbsp;<span><b>Contributors</b></span>
+                                    </div>
+                                    <div class="col-sm-3">
+                                        <ul style="list-style-type:none">
+                                            <li style="padding-right:30%">
+                                                @if (PUCIT.AIMRL.PRM.MainApp.Security.PermissionManager.PerCanAddContributer == true && Model.AppStatus != (int)PUCIT.AIMRL.PRM.Entities.Enum.ApplicationStatus.Rejected && Model.AppStatus != (int)PUCIT.AIMRL.PRM.Entities.Enum.ApplicationStatus.Approved)
+                                                {
+                                                <i class="pull-right ace-icon fa fa-user bigger-150 hand" id="addContributor"></i>
+                                                }
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                <div class="space-4"></div>
+
+                                <div class="row">
+                                    <div class="col-sm-12">
+                                        <ol id="ContributorStatus"></ol>
+                                    </div>
+                                    @*<div class="col-sm-3">
+                                        <ul style="list-style-type:none" id="statusIcons"></ul>
+                                    </div>*@
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-sm-2">
+                                    </div>
+                                </div>
+
+                                <br />
+                                <label>
+                                    <b>Overall Status</b>
+                                </label>
+                                <div class="row">
+                                    <div class="col-sm-12" id="overallstatus">
+                                        <label id="OverallStatus"></label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="space-24"></div>
+
+                </div>
+            </div><!-- PAGE CONTENT ENDS -->
+        </div><!-- /.col -->
+    </div><!-- /.row -->
+    <a href="#" id="btn-scroll-up" class="btn-scroll-up btn btn-sm btn-inverse">
+        <i class="ace-icon fa fa-angle-double-up icon-only bigger-110"></i>
+    </a>
+</div><!-- /.page-content -->
+@section PopupsAndTemplates
+{
+    @{
+        Html.RenderAction("YesNoModal", "Partial");
+    }
+
+<div id="divCustomPopup" class="modal in" tabindex="-1" data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" id="btnCustomModalClose" data-dismiss="modal">x</button>
+                <h4 class="blue bigger popuptitler">Remarks</h4>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-xs-12">
+                    </div>
+                </div>
+                <textarea style="margin-left:10px" id="txtCustomPopupRemarks" maxlength="200" rows="6" cols="60"></textarea>
+                <div class="row">
+                    <div class="col-xs-12">
+                        <div class="pull-left" id="divCheckboxes" style="display:none">
+                            <input type="checkbox" id="chkIsPrintAllowed" /> Show In Print Format <br />
+                            <div id="divVisibleTo">
+                                Visible To: <select id="cmbVisibleTo">
+                                                <option value="0" selected="selected">Application Creator + Contributors</option>
+                                    <option value="-1">Contributors Only</option>
+                                    <option value="-2">Application Creator</option>
+                                </select>
+                            </div>
+                            <div id="divWhoCanReply">
+                                Who Can Reply: <select id="cmbWhoCanReply">
+                                    <option value="0" selected="selected">No One</option>
+                                    <option value="-3">Application Creator + Contributors</option>
+                                    <option value="-1">Contributors Only</option>
+                                    <option value="-2">Application Creator</option>
+                                </select>
+                                <select class="contributors" style="display:none"></select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-sm" data-dismiss="modal">
+                    <i class="ace-icon fa fa-times"></i>
+                    Cancel
+                </button>
+                <button class="btn btn-sm btn-primary" id="btnSubmitCustomPopup">
+                    <i class="ace-icon fa fa-check"></i>
+                    Save
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="contributorModal" class="modal in" tabindex="-1" data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" id="contributorModalClose" data-dismiss="modal">x</button>
+                <h4 class="primary bigger">Add Contributor</h4>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-xs-12 col-sm-11">
+                        <input id="search" type="text" placeholder="Enter Here" style="width:100%" />
+                        <div class="space-4"></div>
+                        <div class="space-4"></div>
+                        <label>
+                            <i class="ace-icon fa fa-users bigger-130 green"></i> &nbsp;<span><b>Contributors</b></span>
+                        </label>
+
+                        <div class="row">
+                            <div id="draggable" style="max-height:250px;overflow-y:auto">
+                                <ol id="sortable" style="list-style-type:none"></ol>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-sm" data-dismiss="modal" id="CancelButton">
+                    <i class="ace-icon fa fa-times"></i>
+                    Close
+                </button>
+                <button class="btn btn-sm btn-primary" id="saveButton">
+                    <i class="ace-icon fa fa-check"></i>
+                    Save
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (PUCIT.AIMRL.PRM.MainApp.Security.PermissionManager.perCanSwapRequestAssignmentWithApprover == true && Model.IsPendingForCurrUser)
+{
+<div id="swapContributorModal" class="modal in" tabindex="-1" data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close"  data-dismiss="modal">x</button>
+                <h4 class="primary bigger">Swap Contributor</h4>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-xs-12 col-sm-11">
+                            Approver for swap: <select id="cmbContributorToSwapWith" aid="@PUCIT.AIMRL.PRM.UI.Common.SessionManager.CurrentUser.CurrentApproverID">
+                                <option value="0">--Select--</option>
+                            </select>
+                            <span>*</span>
+                            <textarea style="padding:10px;margin:10px;" id="txtCustomPopupRemarksForSwapCase" maxlength="200" rows="6" cols="60" placeholder="Give your remarks here"></textarea>
+                       
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-sm" data-dismiss="modal">
+                    <i class="ace-icon fa fa-times"></i>
+                    Close
+                </button>
+                <button class="btn btn-sm btn-primary" id="saveSwapButton">
+                    <i class="ace-icon fa fa-check"></i>
+                    Save
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+}
+<div id="divConvPopup" class="modal in" tabindex="-1" data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" id="btnCloseConvPopup" data-dismiss="modal">x</button>
+                <h4 class="blue bigger">Conversation</h4>
+            </div>
+            <div class="modal-body">
+                @if (Model.AppStatus == (int)PUCIT.AIMRL.PRM.Entities.Enum.ApplicationStatus.Pending)
+                {
+                <div class="row">
+                    <div class="col-xs-12">
+                        <div class="col-xs-10">
+                            <input type="text" style="width:400px" id="txtConvMessage" maxlength="30"  placeholder="Write your message" /> &nbsp;&nbsp;
+                        </div>
+                        <div class="col-xs-2">
+                            <button type="button" class="btn btn-sm btn-primary btn-round" id="btnAddMessage">Reply </button>
+                        </div>
+                    </div>
+                </div>
+                }
+                <div class="space-4"></div>
+                <div class="profile-feed" id="divConvMessages" style="max-height: 250px; overflow-y: auto;">
+
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-sm" data-dismiss="modal" id="CancelButton">
+                    <i class="ace-icon fa fa-times"></i>
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="divFileUploadPopup" class="modal in" tabindex="-1" data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog" style="width:540px;height:250px">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" id="btnCloseFileUploadPopup" data-dismiss="modal">x</button>
+                <h4 class="blue bigger">Add Attachment</h4>
+            </div>
+            <div class="modal-body" style="width: 460px;height:250px">
+                <div class="row">
+                    <div class="col-xs-12">
+                        <label class="asterisk" for="form-field-first"><b>Name: </b></label>
+                        <input type="text" id="txtAttachmentName" size="50" /><br />
+                        <br /><div id="fileError"></div><input type="file" id="fileControl" /><br />
+                        <button type="button" class="btn btn-sm btn-primary btn-round" id="btnUploadFile">Upload</button>
+                    </div>
+                </div>
+                <div class="space-4"></div>
+                <div class="profile-feed" id="divConvMessages" style="height:82px ; width:510px">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script id="changeContributorsTemplate" type="text/x-handlebars-template">
+    {{#each ContributorList}}
+    {{#ifEqual WorkFlowStatus '1' }}
+    <li class="dd-handle" uid="{{ApproverID}}" wfid="{{WFID}}">{{Designation}} ({{Name}})<i class="btn-group pull-right fa fa-times bigger-110 red2 removeContributor"></i></li>
+    {{/ifEqual}}
+
+    {{#ifNotEqual WorkFlowStatus '1' }}
+    <li class="dd-handle nondrag" uid="{{ApproverID}}">{{Designation}} ({{Name}})</li>
+    {{/ifNotEqual}}
+    {{/each}}
+</script>
+
+<script id="showAttachmentTemplate" type="text/x-handlebars-template">
+    {{#each AttachmentList}}
+    <li class="dd-handle nondrag" fname="{{attachment.FileName}}">
+        <div class="col-sm-5">
+            <a href="@Url.Content("~/UploadedFiles/"){{attachment.FileName}}" class="attachmentname" target="_blank">
+                {{type.typeName}}
+                <span class="ace-icon fa fa-paperclip">
+                </span>
+            </a>
+        </div>
+        <input type="hidden" id="filenametobeedited" value="{{attachment.FileName}}">
+        @if (Model.CanStdEditFlag)
+        {
+        <a href="#" class="attRemove" style="padding-right:10%">Remove</a>
+        <a href="#" class="attReplace">Replace</a>
+        }
+    </li>
+    {{/each}}
+</script>
+<script id="showDOC" type="text/x-handlebars-template">
+    {{#each StudentList}}
+    <li> <b>{{ReceiptOfOriginal.DocumentName}}</b></li>
+    {{/each}}
+</script>
+
+<script id="LogListTemplate" type="text/x-handlebars-template">
+    {{#each LogList}}
+
+    <div class="timeline-item clearfix" aid="{{Id}}">
+        <div class="timeline-info">
+            <span class="badge badge-info">{{SrNo}}</span>
+        </div>
+        <div class="widget-box transparent">
+            <div class="widget-header widget-header-small">
+                <h5 class="widget-title smaller pull-left">
+                    <span class="grey"><b>{{Activity}}</b></span>
+                </h5>
+                <span class="widget-toolbar">
+                    <i class="ace-icon fa fa-clock-o bigger-110"></i>
+                    {{ActivityTimeStr}}
+                </span>
+            </div>
+            {{#ifNotEqual Comments '' }}
+            <div class="widget-body">
+                <div class="widget-main" style="width: 40em;word-wrap: break-word;">
+                    {{Comments}}
+                    {{#ifEqual CanReplyFlag '1' }}
+                    <hr />
+                    <span><a class="lnkShowConversation" href="#" alogid="{{Id}}">View Converstation</a></span>
+                    {{/ifEqual}}
+
+                    {{#ifEqual ShowActionPanel true }}
+                    <hr />
+                    <div class="actionpanels" vid="{{VisibleToUserID}}" rid="{{CanReplyUserID}}" ast="@Model.AppStatus">
+                    </div>
+                    {{/ifEqual}}
+                </div>
+            </div>
+            {{/ifNotEqual}}
+        </div>
+        <div class="space-4"></div>
+
+    </div>
+    {{/each}}
+</script>
+
+<script id="showDocsListTemplate" type="text/x-handlebars-template">
+    {{#each docList}}
+    <div class="space-4"></div>
+    <li> {{Name}}</li>
+    {{/each}}
+</script>
+<script id="PreviousAppsTemplate" type="text/x-handlebars-template">
+    {{#each ApplicationList}}
+    <tr>
+        <td>
+            <a href='@Url.Content("~/Home/ApplicationView/{{ApplicationId}}")'>
+                <small>
+                    <s class="red"></s>
+                </small>
+                <b class="blue">{{Subject}}</b>
+            </a>
+
+        </td>
+
+        <td class="hidden-480">
+            <span>{{EntryTimeStr}}</span>
+        </td>
+    </tr>
+    {{/each}}
+</script>
+<script id="CoursesTemplate" type="text/x-handlebars-template">
+    {{#each courses}}
+    <tr>
+        <td>
+            <span>{{CourseID}}</span>
+        </td>
+
+        <td>
+            <span>{{CourseTitle}}</span>
+        </td>
+
+        <td>
+            <span>{{CreditHours}}</span>
+        </td>
+        <td>
+            <span>{{TeacherName}}</span>
+        </td>
+    </tr>
+    {{/each}}
+</script>
+
+<script id="ItemDemandTemplate" type="text/x-handlebars-template">
+    {{#each items}}
+    <tr>
+        <td>
+            <span>{{ItemName}}</span>
+        </td>
+
+        <td class="qtyreq">
+            <span>{{Quantity}}</span>
+        </td>
+        @if (Model.AppStatus == 2 && PUCIT.AIMRL.PRM.UI.Common.SessionManager.CurrentUser.AppAccessType == PUCIT.AIMRL.PRM.Entities.Enum.ApplicationAccessType.Assigned)
+        {
+            <td contenteditable="true" class="qtyiss"></td>
+        }
+        else if ((Model.AppStatus == 3 && PUCIT.AIMRL.PRM.UI.Common.SessionManager.CurrentUser.AppAccessType == PUCIT.AIMRL.PRM.Entities.Enum.ApplicationAccessType.SelfCreated) || (Model.AppStatus == 3 && PUCIT.AIMRL.PRM.UI.Common.SessionManager.CurrentUser.AppAccessType == PUCIT.AIMRL.PRM.Entities.Enum.ApplicationAccessType.Assigned))
+        {
+            <td>
+                <span>{{IssuedQty}}</span>
+            </td>
+        }
+    </tr>
+    {{/each}}
+</script>
+
+
+<script id="HardwareTemplate" type="text/x-handlebars-template">
+    {{#each hardItems}}
+    <tr>
+        <td>
+            <span>{{ItemName}}</span>
+        </td>
+
+        <td class="qtyreq">
+            <span>{{Quantity}}</span>
+        </td>
+        @if (Model.AppStatus == 2 && PUCIT.AIMRL.PRM.UI.Common.SessionManager.CurrentUser.AppAccessType == PUCIT.AIMRL.PRM.Entities.Enum.ApplicationAccessType.Assigned)
+        {
+            <td contenteditable="true" class="qtyiss"></td>
+        }
+        else if ((Model.AppStatus == 3 && PUCIT.AIMRL.PRM.UI.Common.SessionManager.CurrentUser.AppAccessType == PUCIT.AIMRL.PRM.Entities.Enum.ApplicationAccessType.SelfCreated) || (Model.AppStatus == 3 && PUCIT.AIMRL.PRM.UI.Common.SessionManager.CurrentUser.AppAccessType == PUCIT.AIMRL.PRM.Entities.Enum.ApplicationAccessType.Assigned))
+        {
+            <td>
+                <span>{{IssuedQty}}</span>
+            </td>
+        }
+    </tr>
+    {{/each}}
+</script>
+
+
+<script id="DemandVoucherTemplate" type="text/x-handlebars-template">
+    {{#each demandItems}}
+    <tr>
+        <td>
+            <span>{{ItemName}}</span>
+        </td>
+
+        <td>
+            <span>{{Quantity}}</span>
+        </td>
+    </tr>
+    {{/each}}
+</script>
+
+<script id="StoreDemandVoucherTemplate" type="text/x-handlebars-template">
+    {{#each storeDemand}}
+    <tr>
+        <td>
+            <span>{{ItemName}}</span>
+        </td>
+
+        <td>
+            <span>{{Quantity}}</span>
+        </td>
+    </tr>
+    {{/each}}
+</script>
+
+<script id="ConversationTemplate" type="text/x-handlebars-template">
+    {{#each ConversationList}}
+    <div class="profile-activity">
+        <div>
+            <span class="blue"> <b>{{UserName}}:</b> &nbsp; </span>
+            <div class="time pull-right blue">
+                <i class="ace-icon fa fa-clock-o bigger-110"></i>
+                {{MessageTimeTimeStr}}
+            </div>
+            <div style="word-wrap:break-word">{{Message}}</div>
+        </div>
+    </div>
+    {{/each}}
+</script>
+}
+

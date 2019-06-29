@@ -1,0 +1,106 @@
+﻿@{
+    Layout = null;
+}
+
+<div id="roomReservation">
+    <div class="row">
+        <div class="space-4"></div>
+        <div style="padding-left:50px;">
+            <div class="col-md-3">
+            </div>
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label for="form-field-username"><b>Name: </b> </label>
+                    <label id="name" for="form-field-username">@ViewBag.Name</label>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label for="form-field-first"><b>Designation: </b></label>&nbsp;
+                <label id="rollNo" class="text" for="form-field-first">@ViewBag.title</label>
+            </div>
+            <div class="col-md-3">
+            </div>
+            <div class="space-4"></div>
+            <div class="space-4"></div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="space-4"></div>
+        <div style="padding-left:50px;">
+            <div class="col-md-3">
+            </div>
+            <div class="col-md-6">
+                <label for="form-field-first" class="asterisk"><b>Date: </b></label>&nbsp;
+                <input type="text" class="date-picker" id="roomRes_Date" placeholder="MM-DD-YYYY" data-date-format="mm-dd-yyyy" style="height:30px;width:120px" />&emsp;&emsp;&emsp;
+                <div id="room_reservation_date_result"></div>
+
+              </div>
+        </div>
+        <div class="space-4"></div>
+        <div class="space-4"></div>
+
+
+    </div>
+    <div class="row">
+        <div style="padding-left:50px;">
+            <div class="col-md-3">
+            </div>
+            <div class="col-md-6">
+                <label for="form-field-first" class="asterisk"><b>Time: </b></label><br />
+                &emsp;
+                <label for="form-field-first"><b>From: </b></label>&nbsp;
+                <input type="time" id="roomRes_fromTime" style="height:30px;width:120px"  />&emsp;
+                <label for="form-field-first"><b>To: </b></label>&nbsp;
+                <input type="time" id="roomRes_toTime" style="height:30px;width:120px"  />&emsp;&emsp;
+                <div id="room_reservation_time_result"></div>
+
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div style="padding-left:50px;">
+            <div class="col-md-3">
+            </div>
+            <div class="col-md-6">
+                <label for="form-field-first" class="asterisk"><b>Multimedia Required: </b></label><br />
+                <div id="multimediaReq_result"></div>
+                &emsp;&emsp;
+                <input type="radio" name="multimediaReq" id="multimediaReqYes" value="yes" checked> Yes
+                &nbsp;
+                <input type="radio" name="multimediaReq" id="multimediaReqNo" value="no"> No<br>
+            </div>
+        </div>
+        <div class="space-4"></div>
+    </div>
+    <div class="row">
+        <div class="space-4"></div>
+        <div style="padding-left:50px;">
+            <div class="col-md-3">
+            </div>
+            <div class="col-md-6">
+                <label for="form-field-first"><b>Total Students: </b></label>
+                <input type="number" id="roomRes_Stds" style="width:60px;height:30px;" maxlength="5" />&emsp;&emsp;&emsp;
+                <div id="room_reservation_std_result"></div>
+            </div>
+        </div>
+        <div class="space-4"></div>
+    </div>
+
+    <div class="row">
+        <div class="space-4"></div>
+        <div style="padding-left:50px;">
+            <div class="col-md-3">
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label class="asterisk" for="form-field-username"><b>Purpose: </b></label>
+                    <div id="room_reservation_purpose_result"></div>
+                    <textarea id="room_reservation_purpose" class="form-control" maxlength="200" rows="6"></textarea>
+                </div>
+            </div>
+        </div>
+        <div class="space-4"></div>
+    </div>
+
+</div>

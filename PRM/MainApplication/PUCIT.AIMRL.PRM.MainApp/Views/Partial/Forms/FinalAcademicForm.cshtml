@@ -1,0 +1,109 @@
+﻿@{
+    Layout = null;
+}
+
+<div id="finalAcademic" style="display:none">
+    <div class="row">
+        <div class="space-4"></div>
+        <div style="padding-left:50px;">
+            <div class="col-md-3">
+            </div>
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label for="form-field-username"><b>Name: </b> </label>
+                    <label id="name" for="form-field-username">@ViewBag.Name</label>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label for="form-field-first"><b>Roll No: </b></label>&nbsp;
+                <label id="rollNo" class="text" for="form-field-first">@ViewBag.RollNo</label>
+            </div>
+            <div class="col-md-3">
+            </div>
+            <div class="space-4"></div>
+            <div class="space-4"></div>
+        </div>
+    </div>
+    <div class="row">
+        <div style="padding-left:50px;">
+            <div class="col-md-3"></div>
+            <div class="col-md-3">
+                <label class="asterisk" for="form-field-username"><b>Father's Name: </b></label>
+                <div id="finalAcademic_fname_result"></div>
+                <label for="form-field-username">@ViewBag.FatherName</label>
+            </div>
+            <div class="col-md-3">
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div style="padding-left:50px;">
+            <div class="col-md-3">
+            </div>
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label for="form-field-username"><b>PU Registration No: </b> </label>
+                    <div id="PUreg_result_Acad"></div>
+                    <input type="text" class="input-sm form-control" maxlength="12" placeholder="1234_XXX_567" id="finalAcademic_PU">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label class="asterisk" for="form-field-username"><b>Final Project Title: </b></label>
+                <div id="fyp_result_Acad"></div>
+                <div class="input-group">
+                    <input type="text" maxlength="100" class="input-sm form-control" id="finalAcademic_FYPTitle">
+                </div>
+            </div>
+            <div class="col-md-3">
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div style="padding-left:50px;">
+            <div class="col-md-3">
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="form-field-username"><b>Reason: </b></label>
+                    <textarea id="finalAcademic_reason" class="form-control" maxlength="200" rows="6"></textarea>
+                </div>
+            </div>
+            <div class="space-4"></div>
+            <div class="space-4"></div>
+            <div class="col-md-3">
+            </div>
+            <div class="col-md-3">
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div style="padding-left:50px;">
+            <div class="col-md-3">
+            </div>
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label class="asterisk" for="form-field-username"><b>Attachments:  (.jpg, .gif, .png)</b></label>
+                    <div id="Attachments_result_Acad"></div>
+                    <ul>
+                        <li>
+                            Clearance Form Copy
+                            <div class="space-4"></div>
+                            <input type="file" id="finalAcademicAttachment" />
+
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div class="col-md-3">
+            </div>
+        </div>
+    </div>
+    <div>
+        <div class="col-md-9"></div>
+        <div class="col-md-3">
+            <div class="pull-right">
+                <i><font color="red">* </font>Indicates required fields.</i>
+            </div>
+        </div>
+    </div>
+</div>

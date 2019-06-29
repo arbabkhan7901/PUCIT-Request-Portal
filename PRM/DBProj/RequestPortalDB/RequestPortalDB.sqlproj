@@ -1,0 +1,233 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <Name>RequestPortalDB</Name>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectVersion>4.1</ProjectVersion>
+    <ProjectGuid>{16ad1f35-23f8-4460-b6e0-1ad2bd08af3c}</ProjectGuid>
+    <DSP>Microsoft.Data.Tools.Schema.Sql.Sql110DatabaseSchemaProvider</DSP>
+    <OutputType>Database</OutputType>
+    <RootPath>
+    </RootPath>
+    <RootNamespace>RequestPortalDB</RootNamespace>
+    <AssemblyName>RequestPortalDB</AssemblyName>
+    <ModelCollation>1033,CI</ModelCollation>
+    <DefaultFileStructure>BySchemaType</DefaultFileStructure>
+    <DeployToDatabase>True</DeployToDatabase>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetLanguage>CS</TargetLanguage>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <SqlServerVerification>False</SqlServerVerification>
+    <IncludeCompositeObjects>True</IncludeCompositeObjects>
+    <TargetDatabaseSet>True</TargetDatabaseSet>
+    <DefaultCollation>SQL_Latin1_General_CP1_CI_AS</DefaultCollation>
+    <DefaultFilegroup>PRIMARY</DefaultFilegroup>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <OutputPath>bin\Release\</OutputPath>
+    <BuildScriptName>$(MSBuildProjectName).sql</BuildScriptName>
+    <TreatWarningsAsErrors>False</TreatWarningsAsErrors>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <DefineDebug>false</DefineDebug>
+    <DefineTrace>true</DefineTrace>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <OutputPath>bin\Debug\</OutputPath>
+    <BuildScriptName>$(MSBuildProjectName).sql</BuildScriptName>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <DefineDebug>true</DefineDebug>
+    <DefineTrace>true</DefineTrace>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup>
+    <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">11.0</VisualStudioVersion>
+    <!-- Default to the v11.0 targets path if the targets file for the current VS version is not found -->
+    <SSDTExists Condition="Exists('$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v$(VisualStudioVersion)\SSDT\Microsoft.Data.Tools.Schema.SqlTasks.targets')">True</SSDTExists>
+    <VisualStudioVersion Condition="'$(SSDTExists)' == ''">11.0</VisualStudioVersion>
+  </PropertyGroup>
+  <Import Condition="'$(SQLDBExtensionsRefPath)' != ''" Project="$(SQLDBExtensionsRefPath)\Microsoft.Data.Tools.Schema.SqlTasks.targets" />
+  <Import Condition="'$(SQLDBExtensionsRefPath)' == ''" Project="$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v$(VisualStudioVersion)\SSDT\Microsoft.Data.Tools.Schema.SqlTasks.targets" />
+  <ItemGroup>
+    <Folder Include="Properties" />
+    <Folder Include="Tables\" />
+    <Folder Include="Views\" />
+    <Folder Include="Functions\" />
+    <Folder Include="Stored Procedures\" />
+    <Folder Include="User Defined Types\" />
+    <Folder Include="PostDeploymentScript" />
+    <Folder Include="PostDeploymentScript\DataScripts" />
+  </ItemGroup>
+  <ItemGroup>
+    <Build Include="Tables\HardwareForm.sql" />
+    <Build Include="Tables\InQuantityRec.sql" />
+    <Build Include="Tables\Items.sql" />
+    <Build Include="Tables\LabReservationData.sql" />
+    <Build Include="Tables\LeaveApplicationForm.sql" />
+    <Build Include="Tables\LoginHistory.sql" />
+    <Build Include="Tables\OptionForBscDegree.sql" />
+    <Build Include="Tables\Permissions.sql" />
+    <Build Include="Tables\PermissionsMapping.sql" />
+    <Build Include="Tables\ReceiptOfOrignalEducationalDocuments.sql" />
+    <Build Include="Tables\RequestMainData.sql" />
+    <Build Include="Tables\ReqWorkflow.sql" />
+    <Build Include="Tables\Roles.sql" />
+    <Build Include="Tables\RoomReservation.sql" />
+    <Build Include="Tables\SemesterAcademicTranscript.sql" />
+    <Build Include="Tables\SemesterRejoinData.sql" />
+    <Build Include="Tables\StatusTypes.sql" />
+    <Build Include="Tables\StoreDemandVoucher.sql" />
+    <Build Include="Tables\UserRoles.sql" />
+    <Build Include="Tables\Users.sql" />
+    <Build Include="Tables\VehicalTokenData.sql" />
+    <Build Include="Tables\ActivityLogConversations.sql" />
+    <Build Include="Tables\ActivityLogTable.sql" />
+    <Build Include="Tables\ApproverHierarchy.sql" />
+    <Build Include="Tables\Approvers.sql" />
+    <Build Include="Tables\Attachments.sql" />
+    <Build Include="Tables\AttachmentTypes.sql" />
+    <Build Include="Tables\BonafideCertificateData.sql" />
+    <Build Include="Tables\ClearanceFormData.sql" />
+    <Build Include="Tables\CollegeIDCardData.sql" />
+    <Build Include="Tables\ContactUs.sql" />
+    <Build Include="Tables\CourseWithdrawal.sql" />
+    <Build Include="Tables\DemandForm.sql" />
+    <Build Include="Tables\DemandVoucher.sql" />
+    <Build Include="Tables\Designations.sql" />
+    <Build Include="Tables\EmailRequests.sql" />
+    <Build Include="Tables\FinalTranscriptData.sql" />
+    <Build Include="Tables\ForgotPasswordLog.sql" />
+    <Build Include="Tables\FormCategories.sql" />
+    <Build Include="Tables\FormRoleMapping.sql" />
+    <Build Include="Tables\GmailLoginRequests.sql" />
+    <Build Include="Views\vwApproverWithDesig.sql" />
+    <Build Include="Functions\IsValidLogId.sql" />
+    <Build Include="Functions\Split1.sql" />
+    <Build Include="Stored Procedures\AddContributers.sql" />
+    <Build Include="Stored Procedures\AddContributor.sql" />
+    <Build Include="Stored Procedures\AddRemarks.sql" />
+    <Build Include="Stored Procedures\AppCountStatusWise.sql" />
+    <Build Include="Stored Procedures\AppCountStatusWiseReport.sql" />
+    <Build Include="Stored Procedures\ApproveRequest.sql" />
+    <Build Include="Stored Procedures\CreateUserFromGmailRequest.sql" />
+    <Build Include="Stored Procedures\DeleteUsers.sql" />
+    <Build Include="Stored Procedures\EnableDisablePermission.sql" />
+    <Build Include="Stored Procedures\EnableDisableRequestEdit.sql" />
+    <Build Include="Stored Procedures\EnableDisableRole.sql" />
+    <Build Include="Stored Procedures\EnableDisableUser.sql" />
+    <Build Include="Stored Procedures\Find_Text_In_SP.sql" />
+    <Build Include="Stored Procedures\GetActivityLogConversationData.sql" />
+    <Build Include="Stored Procedures\GetActivityLogData.sql" />
+    <Build Include="Stored Procedures\GetActivityLogDataForReport.sql" />
+    <Build Include="Stored Procedures\GetAllDesignations.sql" />
+    <Build Include="Stored Procedures\getAllItems.sql" />
+    <Build Include="Stored Procedures\GetAllPermissions.sql" />
+    <Build Include="Stored Procedures\GetAppCountByStatus.sql" />
+    <Build Include="Stored Procedures\GetApproversByFormID.sql" />
+    <Build Include="Stored Procedures\GetApproversByRequestId.sql" />
+    <Build Include="Stored Procedures\GetAttachements.sql" />
+    <Build Include="Stored Procedures\GetEmailRequestsByUniqueID.sql" />
+    <Build Include="Stored Procedures\GetFormCategoriesByRoleID.sql" />
+    <Build Include="Stored Procedures\getHardwareItems.sql" />
+    <Build Include="Stored Procedures\getItemQuantityFromItemsTable.sql" />
+    <Build Include="Stored Procedures\getItems.sql" />
+    <Build Include="Stored Procedures\GetPendingRequestsCountByCategoryID_UserID.sql" />
+    <Build Include="Stored Procedures\GetPendingRequestsForNotifications.sql" />
+    <Build Include="Stored Procedures\GetRequestAccessParams.sql" />
+    <Build Include="Stored Procedures\GetRolePermissionById.sql" />
+    <Build Include="Stored Procedures\GetRolesByUserID.sql" />
+    <Build Include="Stored Procedures\getVoucherItems.sql" />
+    <Build Include="Stored Procedures\HandleRecieving.sql" />
+    <Build Include="Stored Procedures\IsRequestIDValid.sql" />
+    <Build Include="Stored Procedures\IsValidResetToken.sql" />
+    <Build Include="Stored Procedures\ItemSearchReport.sql" />
+    <Build Include="Stored Procedures\RemoveAttachment.sql" />
+    <Build Include="Stored Procedures\RemoveContributor.sql" />
+    <Build Include="Stored Procedures\RouteBack.sql" />
+    <Build Include="Stored Procedures\SaveAttachment.sql" />
+    <Build Include="Stored Procedures\SaveContactUs.sql" />
+    <Build Include="Stored Procedures\SaveContributorsForForm.sql" />
+    <Build Include="Stored Procedures\SaveGmailLoginRequest.sql" />
+    <Build Include="Stored Procedures\SaveItems.sql" />
+    <Build Include="Stored Procedures\SaveLogConversation.sql" />
+    <Build Include="Stored Procedures\SavePermission.sql" />
+    <Build Include="Stored Procedures\SaveQty.sql" />
+    <Build Include="Stored Procedures\SaveRequest.sql" />
+    <Build Include="Stored Procedures\SaveRolePermissionMapping.sql" />
+    <Build Include="Stored Procedures\SaveRoles.sql" />
+    <Build Include="Stored Procedures\SaveUserRoleMapping.sql" />
+    <Build Include="Stored Procedures\SaveUsers.sql" />
+    <Build Include="Stored Procedures\SearchApplications.sql" />
+    <Build Include="Stored Procedures\SearchApprover.sql" />
+    <Build Include="Stored Procedures\SearchContactUs.sql" />
+    <Build Include="Stored Procedures\SearchForgotPasswordLog.sql" />
+    <Build Include="Stored Procedures\SearchGoogleLoginRequests.sql" />
+    <Build Include="Stored Procedures\SearchLoginHistory.sql" />
+    <Build Include="Stored Procedures\SearchUserForAutoComplete.sql" />
+    <Build Include="Stored Procedures\SearchUsers.sql" />
+    <Build Include="Stored Procedures\Swap_Approvers.sql" />
+    <Build Include="Stored Procedures\UpdateActivityLogActionItem.sql" />
+    <Build Include="Stored Procedures\UpdateAttachment.sql" />
+    <Build Include="Stored Procedures\UpdateCGPA.sql" />
+    <Build Include="Stored Procedures\UpdateContributorsOrder.sql" />
+    <Build Include="Stored Procedures\UpdateDemandFormIssuedQty.sql" />
+    <Build Include="Stored Procedures\UpdateHardwareFormIssuedQty.sql" />
+    <Build Include="Stored Procedures\UpdateHardwareItemsinMainItemsForm.sql" />
+    <Build Include="Stored Procedures\UpdateItemsInMainItemsForm.sql" />
+    <Build Include="Stored Procedures\UpdatePassword.sql" />
+    <Build Include="Stored Procedures\UpdateResetPasswordToken.sql" />
+    <Build Include="Stored Procedures\UpdateWorkFlow.sql" />
+    <Build Include="Stored Procedures\ValidateUser.sql" />
+    <Build Include="User Defined Types\ArrayInt.sql" />
+    <Build Include="User Defined Types\ArrayInt2.sql" />
+    <Build Include="User Defined Types\ArrayInt3.sql" />
+    <Build Include="User Defined Types\ArrayIntFlags.sql" />
+    <None Include="PostDeploymentScript\DataScripts\dbo_users_data.sql" />
+    <None Include="PostDeploymentScript\DataScripts\dbo_form_categories.sql" />
+    <None Include="PostDeploymentScript\DataScripts\dbo_designations.sql" />
+    <None Include="PostDeploymentScript\DataScripts\dbo_approvers.sql" />
+    <None Include="PostDeploymentScript\DataScripts\dbo_ApproverHierarchy.sql" />
+    <None Include="PostDeploymentScript\DataScripts\dbo_AttachmentTypes.sql" />
+    <None Include="PostDeploymentScript\DataScripts\dbo_Permissions.sql" />
+    <None Include="PostDeploymentScript\DataScripts\dbo_Roles.sql" />
+    <None Include="PostDeploymentScript\DataScripts\dbo_PermissionsMapping.sql" />
+    <None Include="PostDeploymentScript\DataScripts\dbo_StatusTypes.sql" />
+    <None Include="PostDeploymentScript\DataScripts\dbo_UserRoles.sql" />
+    <Build Include="Stored Procedures\AddReview.sql" />
+    <Build Include="Stored Procedures\SearchApprovers.sql" />
+    <Build Include="Stored Procedures\EnableDisableItem.sql" />
+    <Build Include="Stored Procedures\AddEmailRequestToStudents.sql" />
+    <Build Include="Stored Procedures\AddEmailRequestToApprover.sql" />
+    <Build Include="Stored Procedures\AddContributorInWithDraw.sql" />
+    <Build Include="Tables\TypesForContributor.sql" />
+    <Build Include="Tables\TypeForCreator.sql" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="RequestPortalDB.publish.xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <PostDeploy Include="PostDeploymentScript\Script.PostDeployment.sql" />
+    <None Include="PostDeploymentScript\DataScripts\dbo_FormRoleMapping.sql" />
+    <None Include="PostDeploymentScript\DataScripts\dbo_Items.sql" />
+    <None Include="PostDeploymentScript\DataScripts\dbo_TypeForCreator.sql" />
+    <None Include="PostDeploymentScript\DataScripts\dbo_TypesForContributor.sql" />
+  </ItemGroup>
+  <ItemGroup>
+    <SqlCmdVariable Include="DeployDefaultValues">
+      <DefaultValue>0</DefaultValue>
+      <Value>$(SqlCmdVar__1)</Value>
+    </SqlCmdVariable>
+  </ItemGroup>
+  <ItemGroup>
+    <RefactorLog Include="RequestPortalDB.refactorlog" />
+  </ItemGroup>
+</Project>

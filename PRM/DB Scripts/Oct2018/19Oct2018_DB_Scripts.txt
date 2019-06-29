@@ -1,0 +1,3912 @@
+
+CREATE TYPE [dbo].[ArrayInt] AS TABLE(
+	[ID] [int] NULL
+)
+GO
+CREATE TYPE [dbo].[ArrayInt2] AS TABLE(
+	[ID1] [int] NULL,
+	[ID2] [int] NULL
+)
+GO
+CREATE TYPE [dbo].[ArrayInt3] AS TABLE(
+	[ID1] [int] NULL,
+	[ID2] [int] NULL,
+	[ID3] [int] NULL
+)
+GO
+CREATE TYPE [dbo].[ArrayIntFlags] AS TABLE(
+	[ID1] [int] NULL,
+	[ID2] [int] NULL,
+	[Flag1] [bit] NULL,
+	[Flag2] [bit] NULL
+)
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+---------------------------------
+
+CREATE PROCEDURE [dbo].[AddContributers]
+      @FormID int,
+      @ApproverID int,
+      @AltApproverID int,
+      @ApprovalOrder int,
+      @IsForNewCampus bit,
+      @IsForOldCampus bit
+AS
+BEGIN
+	INSERT INTO dbo.ApproverHierarchy(
+      [FormID] ,
+      [ApproverID] ,
+      [AltApproverID] ,
+      [ApprovalOrder] ,
+      [IsForNewCampus] ,
+      [IsForOldCampus] )
+	VALUES(@FormID,@ApproverID,NULL,@ApprovalOrder,@IsForNewCampus,@IsForOldCampus)
+	select @FormID=scope_identity()
+	select @FormID
+END
+
+
+
+
+
+
+
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+
+
+
+CREATE Procedure [dbo].[AddContributor]
+	@RequestID int,
+	@ApproverIDToAdd int,
+	@currentTime datetime,
+	@CurrentApproverID int,
+	@otherUserLogin varchar(50)
+As 
+Begin
+		
+		Declare @wfid int = 0
+
+		-- Append in comment if A user is doing this on behalf of
+		if(@otherUserLogin != '')
+			SET @otherUserLogin = '---------[By '+@otherUserLogin+' on behalf of]'
+
+
+		-- Status to Insert while adding new Entries in workflow table
+		Declare @DefaultStatusForWF int = 1
+		DEclare @isCurrentApprover bit = 0
+		-- SET status based on if parallel approvers are allowed or not
+		Select 
+			@DefaultStatusForWF = case IsParalApprovalAllowed when 1 then 2 else 1 end,
+			@isCurrentApprover = IsParalApprovalAllowed
+		from [dbo].[FormCategories] fc inner join dbo.RequestMainData rm on fc.CategoryID = rm.CategoryID and rm.RequestID = @requestId
+
+		
+	   -- Find max approval order to be used for new entries
+		Declare @maxApprOrder int  =0 
+		Select @maxApprOrder = max(ApprovalOrder) from dbo.ReqWorkflow Where RequestID = @requestId
+
+
+		-- Insert entry in workflow table
+		INSERT INTO [dbo].[ReqWorkflow](RequestID, ApproverID, ApprovalOrder, Status, Remarks, EntryTime, ActionUserID,UserID,IsCurrApprover)
+		Select @requestId,  t.approverId, isnull(@maxApprOrder,0) + 1, @DefaultStatusForWF,'',@currentTime, t.approverId,t.userid,@isCurrentApprover
+		from  dbo.Approvers t Where t.ApproverID = @ApproverIDToAdd AND IsActive = 1
+		
+		select @wfid = scope_identity()
+
+		/* Activity Log Changes */
+
+		Declare @currUserName varchar(100)
+		SELECT @currUserName = ISNULL(DesigWithName,'')
+		FROM dbo.vwApproverWithDesig WHERE ApproverID = @CurrentApproverID
+
+		Declare @TagetUserName varchar(100)
+		SELECT @TagetUserName = ISNULL(DesigWithName,'')
+		FROM dbo.vwApproverWithDesig WHERE ApproverID = @ApproverIDToAdd
+
+		-- Add log for added contributors
+		INSERT INTO [dbo].[ActivityLogTable](RequestId, UserId, Comments, Activity, ActivityTime)
+		Select @RequestID, @CurrentApproverID, @TagetUserName + ' is added in contributors.' + @otherUserLogin, 
+				@currUserName + ' made a change in contributors.' ,@currentTime
+					  
+		select cast(@wfid as int)
+End
+
+
+
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+CREATE Procedure [dbo].[AddRemarks]
+	@RequestID int,
+	@ApproverId int,
+	@CreationDate datetime,
+	@Comment varchar(200),
+	@isprintable bit,
+	@visibleToUserId int,
+	@canReplyUserId int,
+	@UniqueId varchar(40)
+As 
+Begin
+		Declare @username varchar(100)
+		Declare @temp_email_body varchar(1000) = ''
+		Declare @email_subj varchar(200) = 'Action on - ACAD/' + cast(@RequestID as varchar);
+		Declare @to_email varchar(50)
+
+		SELECT @username= DesigWithName,@to_email = email  
+		FROM dbo.vwApproverWithDesig Where ApproverID = @ApproverId
+
+		-- Entry in activity log
+		INSERT INTO [dbo].[ActivityLogTable](RequestId, UserId, Comments, Activity, ActivityTime,IsPrintable,VisibleToUserID,CanReplyUserID,ShowActionPanel)
+		Values(@RequestID, @ApproverId, @Comment, @username + ' commented on it.' ,@CreationDate,@isprintable,@visibleToUserId,@canReplyUserId,1)
+	
+		-- Add email entry for Commenter
+		SET @temp_email_body = 'Dear '+@username+',<br><br> You have commented on request <a href="TAG_APP_URL">TAG_APP_URL</a> <br><br><b>Remarks:</b><br>----<br> TAG_REMARKS <br>----<br> Request Portal';
+		INSERT INTO [dbo].[EmailRequests](Subject, MessageBody, EmailTo, ScheduleType, EmailRequestStatus,UniqueID,RequestID)
+		Select @email_subj, @temp_email_body, @to_email, 1, 1,@UniqueId,@RequestID
+
+
+		DECLARE @TempTable TABLE (ID INT Identity(1,1), WFID INT)
+		Declare @TempID int = 1
+		Declare @WFID int = 0
+
+		-- Prepare list of contributors (who have requests in pending state)
+		-- @visibleToUserId = 0 means Student + Contributors
+		-- @visibleToUserId = -1 means only for contributors
+		-- @visibleToUserId = -2 means only for student (application creator)
+		-- @visibleToUserId > 0 means only for a specific contributor
+		INSERT INTO @TempTable(WFID)
+		Select ID  From [dbo].[ReqWorkflow] 
+		Where [RequestID] = @RequestID 
+		and 
+			((Status = 2 -- Pending 
+				AND @visibleToUserId IN (0,-1)
+			)
+			OR
+			(@visibleToUserId > 0 AND ApproverID = @visibleToUserId)
+		   )
+		--and ApproverID = case when @visibleToUserId > 0 then @visibleToUserId else ApproverID end
+		and @visibleToUserId != -2 
+		And ApproverID != @ApproverId
+
+		Declare @TotalWFCount int 
+		Select @TotalWFCount = Count(*) from @TempTable
+
+		-- Add email entry for approver
+		
+		Declare @email_body varchar(1000) = 'Dear TAG_USERNAME,<br><br> ' + @username + ' has commented on request <a href="TAG_APP_URL">TAG_APP_URL</a> <br><br><b>Remarks:</b><br>----<br> TAG_REMARKS <br>----<br> Request Portal';
+		Declare @nextApproverUserId int
+		-----------------------------------------------------------
+
+		While @TempID <= @TotalWFCount
+		BEGIN 
+			SET @temp_email_body = @email_body;
+
+			Select @WFID = WFID from @TempTable Where ID = @TempID
+
+			Select @nextApproverUserId = rwf.ApproverID  from [dbo].[ReqWorkflow] rwf Where ID = @WFID
+
+			SELECT @to_email = email, @username = DesigWithName FROM dbo.vwApproverWithDesig WHERE ApproverID = @nextApproverUserId
+		
+			SET @temp_email_body = Replace(@temp_email_body, 'TAG_USERNAME',@username)
+
+			INSERT INTO [dbo].[EmailRequests](Subject, MessageBody, EmailTo, ScheduleType, EmailRequestStatus,UniqueID,RequestID)
+			Select @email_subj, @temp_email_body, @to_email, 1, 1,@UniqueId,@RequestID
+
+			SET @TempID = @TempID + 1
+
+		END
+
+		--For Requester (if remarks is for student)
+		IF @visibleToUserId = 0 OR @visibleToUserId =  -2  
+		BEGIN
+			SELECT @to_email = u.email, @username = u.Name
+			FROM dbo.Users u INNER JOIN dbo.RequestMainData rmd ON u.UserId = rmd.UserId
+			Where rmd.RequestID = @RequestID
+			SET @temp_email_body = Replace(@email_body, 'TAG_USERNAME',@username)
+			INSERT INTO [dbo].[EmailRequests](Subject, MessageBody, EmailTo, ScheduleType, EmailRequestStatus,UniqueID,RequestID)
+			Select @email_subj, @temp_email_body, @to_email, 1, 1,@UniqueId,@RequestID
+		END
+		
+		Select @RequestID
+End
+
+-- select * from dbo.EmailRequests where uniqueid = '1fc3a746-2d05-428d-8862-52df664bdc4d'
+
+
+
+
+
+
+
+
+
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+Create Procedure [dbo].[AppCountStatusWise]
+	
+AS 
+BEGIN
+
+	Declare @usercount int =0 
+	Declare @TempID int=1
+
+	Select @usercount=count(*) from dbo.Users
+	
+	Declare @useridtable Table (ID Int Identity (1,1),userId INT)
+
+	INSERT INTO @useridtable(userId)
+	Select UserId From [dbo].[Users] 
+
+	DECLARE @TempTable TABLE (ID INT Identity(1,1), userId INT,LoginName varchar(100),UserName varchar(100),Role varchar(50),Designation varchar(100),ApproverId INT)
+
+	While @TempID <= @usercount
+	BEGIN
+		Declare @userid int=0
+		
+		select @userid=UserID from @useridtable where ID=	@TempID
+		
+		DECLARE @TempApproverTable TABLE (ID INT , ApproverID INT,Designation varchar(100),UserId INT default 0)
+	
+		INSERT INTO @TempApproverTable(ID,ApproverID , Designation,UserId)
+		Select Row_Number() Over ( Order By ApproverID ), a.ApproverID , d.Designation,a.UserID  from [dbo].[Approvers] a Join [dbo].[Designations] d  on a.DesignationID= d.DesignationID where UserID=@userid
+
+		Declare @Approvercount int =0
+		
+		Select @Approvercount=count(*) from @TempApproverTable
+		
+		Declare @tempId2 int=1
+		
+		IF(@Approvercount>0)
+		BEGIN
+			While @tempId2 <= @Approvercount
+			BEGIN
+
+				Declare @ApproverID int = 0
+				
+				Select @ApproverID=ApproverID from @TempApproverTable where ID=@tempId2
+				
+				INSERT INTO @TempTable(userId,UserName,LoginName,Role,Designation,ApproverId)
+				Select UserId,Name,Login,case IsContributor when 1 then 'Approver' else 'Not Approver' end ,case Title when '' then 'N/A' else (select Designation from @TempApproverTable where ApproverID=@ApproverID) end, @ApproverID From [dbo].[Users] where UserId=@userid
+
+				SET @tempId2 = @tempId2 + 1
+	
+			END
+			DELETE @TempApproverTable 
+			
+		END
+		ELSE
+		BEGIN
+			
+			INSERT INTO @TempTable(userId,UserName,LoginName,Role,Designation,ApproverId)
+			Select UserId,Name,Login,case IsContributor when 1 then 'Approver' else 'Not Approver' end ,case Title when '' then 'N/A' else Title end ,0 From [dbo].[Users] where UserId=@userid
+
+		END
+			SET @TempID = @TempID + 1
+
+	END
+
+	SELECT * from @TempTable
+	
+	SELECT @usercount=count(*) from @TempTable
+	
+	SET @tempId2=1
+	
+	WHILE @tempId2 <= @usercount
+	BEGIN
+		Declare @appid int=0
+		
+		Select @appid=ApproverId from @TempTable where  ID=@tempId2
+		
+		IF(@appid >0)
+		BEGIN
+			EXEC dbo.GetAppCountByStatus 2,@appid
+		END
+		ELSE
+		BEGIN
+			
+			SELECT @appid=userId from @TempTable where ID=@tempId2
+			
+			EXEC dbo.GetAppCountByStatus 1,@appid
+		END
+		
+		SET @tempId2 = @tempId2 + 1
+	END
+END
+
+
+
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+
+CREATE Procedure [dbo].[AppCountStatusWiseReport]
+@login varchar(50),
+@status int,
+@isapprover int,
+	@startDate date,
+	@endDate date	
+AS 
+BEGIN
+	
+	if @status=0
+	begin
+	-- Find data for non-contributors 
+	Select u.Login,u.Name,'Not Approver' As IsContributor, u.Title,u.Email,t.*
+	FROM dbo.Users  u INNER JOIN 
+
+		(select UserId, isnull( Sum(1),0) as 'All',
+		isnull(Sum(case when RequestStatus = 2 OR RequestStatus = 6  then 1 else 0 end),0) 'Pending',
+		isnull(Sum(case when RequestStatus = 3 then 1 else 0 end),0) 'Accepted',
+		isnull(Sum(case when RequestStatus = 4 then 1 else 0 end),0) 'Rejected',
+		0 as 'NotAssigned'
+		from [dbo].[RequestMainData] where  cast(CreationDate as date) Between @startDate and @endDate
+		group by UserId) as t 
+
+	ON u.UserId = t.UserId AND u.IsActive = 1 and u.IsContributor = 0
+	where ((u.Login like '%'+@login+'%') or (u.Name like '%'+@login+'%'))  and (@isapprover=0 or @isapprover=2)
+
+	UNION ALL
+	-- Find data for contributors
+	SELECT d.Login,d.Name,'Approver',d.Designation,d.Email, t.* 
+	from dbo.vwApproverWithDesig d INNER JOIN
+
+		(select ApproverID, isnull(sum(case when rwf.Status = 5 then 0 else 1 end),0) as 'All',
+		isnull(Sum(case when rwf.Status = 2 then 1 else 0 end),0) 'Pending',
+		isnull(Sum(case when rwf.Status = 3 then 1 else 0 end),0) 'Accepted',
+		isnull(Sum(case when rwf.Status = 4 then 1 else 0 end),0) 'Rejected',
+		isnull(Sum(case when rwf.Status = 1 then 1 else 0 end),0) 'NotAssigned'
+		from [dbo].[RequestMainData] rmd 
+		INNER JOIN [dbo].[ReqWorkflow] rwf on  rwf.RequestID = rmd.RequestID
+		where  cast(rmd.CreationDate as date) Between @startDate and @endDate
+		Group by ApproverID) as t
+
+	ON d.ApproverID = t.ApproverID 
+		where ((d.Login like '%'+@login+'%') or (d.Name like '%'+@login+'%'))   and (@isapprover=0 or @isapprover=1)
+	end
+	else
+	 begin 
+	 -- Find data for non-contributors
+	 Select u.Login,u.Name,'Not Approver' As IsContributor, u.Title,u.Email,t.*
+	FROM dbo.Users  u INNER JOIN 
+
+		(select UserId, isnull( Sum(1),0) as 'All',
+		isnull(Sum(case when RequestStatus = 2 OR RequestStatus = 6  then 1 else 0 end),0) 'Pending',
+		isnull(Sum(case when RequestStatus = 3 then 1 else 0 end),0) 'Accepted',
+		isnull(Sum(case when RequestStatus = 4 then 1 else 0 end),0) 'Rejected',
+		0 as 'NotAssigned'
+		from [dbo].[RequestMainData] where  cast(CreationDate as date) Between @startDate and @endDate
+		group by UserId) as t 
+
+	ON u.UserId = t.UserId AND u.IsActive = 1 and u.IsContributor = 0 
+	where ((u.Login like '%'+@login+'%') or (u.Name like '%'+@login+'%')) and (case when  @status = 4 then t.Rejected when  @status = 2 then t.Pending when  @status = 1 then t.NotAssigned else t.Accepted end)>0  and (@isapprover=0 or @isapprover=2)
+
+
+	UNION ALL
+	-- Find data for contributors
+	 SELECT d.Login,d.Name,'Approver',d.Designation, d.Email,t.* 
+	from dbo.vwApproverWithDesig d INNER JOIN
+
+		(select ApproverID, isnull(sum(case when rwf.Status = 5 then 0 else 1 end),0) as 'All',
+		isnull(Sum(case when rwf.Status = 2 then 1 else 0 end),0) 'Pending',
+		isnull(Sum(case when rwf.Status = 3 then 1 else 0 end),0) 'Accepted',
+		isnull(Sum(case when rwf.Status = 4 then 1 else 0 end),0) 'Rejected',
+		isnull(Sum(case when rwf.Status = 1 then 1 else 0 end),0) 'NotAssigned'
+		from [dbo].[RequestMainData] rmd 
+		INNER JOIN [dbo].[ReqWorkflow] rwf on  rwf.RequestID = rmd.RequestID
+		where  cast(rmd.CreationDate as date) Between @startDate and @endDate
+		Group by ApproverID) as t
+
+	ON d.ApproverID = t.ApproverID 
+	where ((d.Login like '%'+@login+'%') or (d.Name like '%'+@login+'%')) and (case when  @status = 4 then t.Rejected when  @status = 2 then t.Pending when  @status = 1 then t.NotAssigned else t.Accepted end)>0  and (@isapprover=0 or @isapprover=1)
+
+	end
+END
+
+
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+
+
+CREATE Procedure [dbo].[ApproveRequest]
+	@RequestID int,
+	@ApproverID int,
+	@ApprovalDate datetime,
+	@Remarks varchar(500),
+	@Status int,
+	@UniqueId varchar(40)
+As 
+Begin
+	
+
+	BEGIN try
+		Begin Transaction t1
+
+	Declare @email_subj varchar(200)
+	Declare @email_body varchar(500)
+	Declare @to_email varchar(50)
+	Declare @username varchar(100)
+	Declare @formName varchar(100)
+	
+	Select @formName = upper(Category)
+	from [dbo].[FormCategories] c INNER JOIN dbo.RequestMainData rmd ON c.CategoryID = rmd.CategoryID
+	Where rmd.RequestID = @RequestID
+
+	Declare @requester_email varchar(50)
+	Declare @requester_name varchar(100)
+	Declare @requester_rollno varchar(20)
+
+	SELECT @requester_email = email,@requester_name = name,@requester_rollno = u.Login 
+	from dbo.Users u INNER JOIN dbo.RequestMainData rmd on u.UserId = rmd.UserId and rmd.RequestID = @RequestID
+
+
+	--Update Request Flow Status
+	IF isnull(@Remarks,'') != ''
+	BEGIN
+		Update [dbo].[ReqWorkflow] SET Status = @Status, StatusTime = @ApprovalDate, ActionUserID = @ApproverID, Remarks = @Remarks, IsCurrApprover = 0
+		Where RequestID = @RequestID and ApproverID =  @ApproverID and Status = 2 
+	END
+	ELSE
+	BEGIN
+		Update [dbo].[ReqWorkflow] SET Status = @Status, StatusTime = @ApprovalDate, ActionUserID = @ApproverID, IsCurrApprover = 0
+		Where RequestID = @RequestID and ApproverID =  @ApproverID and Status = 2 
+	END
+
+	Declare @statusText varchar(20) ='approved'
+
+	if @status = 4
+	BEGIN
+		SET @statusText = 'rejected';
+
+		Update [dbo].[ReqWorkflow] SET Status = 5, StatusTime = @ApprovalDate, ActionUserID = 0
+		Where RequestID = @RequestID and status IN (1,2)
+	END
+
+	
+	-- Get email & Login of Approver
+	SELECT @to_email = email, @username = DesigWithName 
+	FROM dbo.vwApproverWithDesig WHERE ApproverID = @ApproverId
+
+
+	INSERT INTO [dbo].[ActivityLogTable](RequestId, UserId, Comments, Activity, ActivityTime,IsPrintable, VisibleToUserID,CanReplyUserID)
+	Values(@RequestID, @ApproverID, @Remarks, @username + '  has ' + @statusText +' it.',@ApprovalDate,1,0,0)
+
+	/*Email Handling Code */
+
+	SET @email_subj =  'ACAD/' + cast(@RequestID as varchar) + ' - ' + upper(@statusText) + ' By You';
+	SET @email_body = 'Dear '+@username+',<br><br> You have ' + @statusText +' the application.<br>-----<br>Roll no: ' + @requester_rollno + '<br>Name:'+@requester_name+'<br>Type:'+@formName+'<br>Remarks:TAG_REMARKS<br>For Detail: <a href="TAG_APP_URL">TAG_APP_URL</a><br>----<br><br>Request Portal';
+	
+	--Email for approver
+	INSERT INTO [dbo].[EmailRequests](Subject, MessageBody, EmailTo, ScheduleType, EmailRequestStatus, UniqueID,RequestID)
+	Select @email_subj, @email_body, @to_email, 1, 1,@UniqueId,@RequestID
+
+	-------------------------------------------------------------------------------------------------------
+	
+
+	SET @email_subj = 'ACAD/' + cast(@RequestID as varchar) + ' -  ACTION TAKEN';
+	SET @email_body = 'Dear '+@requester_name+',<br><br> '+@username+' has '+@statusText+' your application. <br>-----<br>Roll no: ' + @requester_rollno + '<br>Name:'+@requester_name+'<br>Type:'+@formName+'<br>Remarks:TAG_REMARKS<br>For Detail: <a href="TAG_APP_URL">TAG_APP_URL</a><br>----<br><br>Request Portal';
+
+	--Email for Student
+	INSERT INTO [dbo].[EmailRequests](Subject, MessageBody, EmailTo, ScheduleType, EmailRequestStatus,UniqueID,RequestID)
+	Select @email_subj, @email_body, @requester_email, 1, 1,@UniqueId,@RequestID
+
+	-------------------------------------------------------------------------------------------------------
+
+	--Update Request Status
+	Declare @count int
+	Select @count = count(*) from dbo.ReqWorkflow Where RequestID = @RequestID and Status IN (1,2)   -- 1 means notAssigned, 2 means Pending
+
+	-- IF It was last approver or App is rejected
+	if @count = 0 OR @Status = 4 
+	BEGIN
+		UPDATE [dbo].[RequestMainData] SET RequestStatus = @Status, LastModifiedOn = @ApprovalDate,RequestToken = @UniqueId
+		Where RequestID = @RequestID
+
+
+		Declare @IsRecAllowed bit = 0
+		Declare @msg varchar(100) = 'Approved by all approvers'
+		Declare @subj varchar(100) = 'Application is closed'
+
+		IF @Status = 4 
+		BEGIN
+			SET @msg = 'Rejected';
+		END
+		ELSE 
+		BEGIN
+			SELECt @IsRecAllowed = IsRecievingAllowed from [dbo].[RequestMainData] r INNER JOIN [dbo].[FormCategories] fc
+			ON r.CategoryID = fc.CategoryID and r.RequestID = @RequestID
+			
+			IF @IsRecAllowed = 1 
+			BEGIN
+				SET @subj = 'Pending for Recieving Activity'
+			END
+		END
+
+			INSERT INTO [dbo].[ActivityLogTable](RequestId, UserId, Comments, Activity, ActivityTime,IsPrintable, VisibleToUserID,CanReplyUserID)
+			Values(@RequestID, @ApproverID, @msg, @subj,@ApprovalDate,0,0,0)
+
+		
+		SET @email_subj = 'ACAD/' + cast(@RequestID as varchar) + ' - ' + @subj;
+		SET @email_body = 'Dear '+@requester_name+',<br><br> Your application is closed now. <br>-----<br>Roll no: ' + @requester_rollno + '<br>Name:'+@requester_name+'<br>Type:'+@formName+'<br>Status:'+@msg+'<br>For Detail: <a href="TAG_APP_URL">TAG_APP_URL</a><br>----<br><br>Request Portal';
+
+		--Email for Student
+		INSERT INTO [dbo].[EmailRequests](Subject, MessageBody, EmailTo, ScheduleType, EmailRequestStatus,UniqueID,RequestID)
+		Select @email_subj, @email_body, @requester_email, 1, 1,@UniqueId,@RequestID
+
+	END
+	ELSE --Not Last approver, also not rejected
+	Begin
+		-- Find Next approver
+		Declare @rwfId int
+		Declare @nextApproverId int
+
+		Select Top 1 @rwfId = ID,@nextApproverId = ApproverID from dbo.ReqWorkflow 
+		Where RequestID = @RequestID and Status = 1 Order by ApprovalOrder ASC
+		
+		if isnull(@rwfId,0) != 0
+		BEGIN
+			-- Mark Next approver status as 'Pending'
+			Update dbo.ReqWorkflow Set Status = 2,StatusTime = @ApprovalDate, IsCurrApprover = 1 where ID =@rwfId
+
+			SELECT @to_email = email, @username = DesigWithName 
+			FROM dbo.vwApproverWithDesig WHERE ApproverID = @nextApproverId
+
+			SET @email_subj = 'ASSIGNMENT ALERT - ACAD/' + cast(@RequestID as varchar);
+			SET @email_body = 'Dear '+@username+',<br><br> An application has been assigned to you for your review. <br>-----<br>Roll no: ' + @requester_rollno + '<br>Name:'+@requester_name+'<br>Type:'+@formName+'<br>For Detail: <a href="TAG_APP_URL">TAG_APP_URL</a><br>----<br><br>Request Portal';
+
+			INSERT INTO [dbo].[EmailRequests](Subject, MessageBody, EmailTo, ScheduleType, EmailRequestStatus,UniqueID,RequestID)
+			Select @email_subj, @email_body, @to_email, 1, 1,@UniqueId,@RequestID
+
+			INSERT INTO [dbo].[ActivityLogTable](RequestId, UserId, Comments, Activity, ActivityTime,IsPrintable, VisibleToUserID,CanReplyUserID)
+			Values(@RequestID, @ApproverID, 'Assigned By System', 'Request is assigned to ' + @username,@ApprovalDate,0,0,0)
+		END
+	END
+
+		commit transaction t1
+	end TRY
+	Begin catch
+		rollback transaction t1
+	End catch
+	
+	Select @RequestID
+End
+
+
+
+
+
+
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE Procedure [dbo].[CreateUserFromGmailRequest]
+@Email varchar(100),
+@RoleId int,
+@CreatedOn datetime,
+@UniqueID varchar(40)
+As
+Begin
+
+	if(Exists(Select * from dbo.Users where Email = @Email))
+	BEGIN
+		Select cast(-1 as int);
+	END
+	ELSE
+	BEGIN
+
+		Declare @Name varchar(100) ='';
+		Declare @GmailRequestID bigint = 0;
+
+		SELECT @GmailRequestID = ID, @Name = Name FROM dbo.GmailLoginRequests WHERE Email = @Email AND IsUsed = 0 
+
+		IF(ISNULL(@GmailRequestID,0) > 0)
+		BEGIN
+			Declare @Login varchar(100) = ''
+			Declare @Title varchar(100) = ''
+			Declare @section varchar(10) = ''
+			Declare @emailPrefix varchar(3) =''
+			Declare @isoldcampus bit = 1
+			Declare @atposition int = charindex('@',@Email);
+		 
+			Select @Login = left(@Email, @atposition-1)
+			Select @emailPrefix = left(@Email, 3)
+		
+			if(@emailprefix = 'BCS' OR @emailprefix = 'BIT' OR @emailprefix = 'BSE' OR @emailprefix = 'MCS' OR @emailprefix = 'PHD')
+			BEGIN
+				SET @Title = 'Student';
+				Select @section = left(@Email, @atposition-4)
+
+				Declare @roll_no int =0
+				select @roll_no  = substring(@Email, @atposition-3,3)
+				if(@roll_no >= 500)
+					SET @isoldcampus =0
+			END
+
+			Declare @UserId int = 0
+			INSERT INTO dbo.Users(Login, Password, Name, Title, Email, SignatureName, StdFatherName, Section, IsContributor, IsOldCampus, CreatedBy, CreatedOn, IsActive, IsDisabledForLogin)
+			Select @Login,'123',@Name,@Title,@Email,'','',@section,0,@isoldcampus,1,@CreatedOn,1,0
+
+			select @UserId =  scope_identity();
+
+			insert into [dbo].[UserRoles](UserId, RoleId)
+			select @UserId,@RoleId
+
+			Update dbo.GmailLoginRequests Set UserId = @UserId, UserCreatedOn = @CreatedOn, IsUsed = 1 Where ID = @GmailRequestID
+			
+			
+			INSERT INTO [dbo].[EmailRequests](Subject, MessageBody, EmailTo, ScheduleType, EmailRequestStatus,UniqueID,RequestID)
+			Select 'Account Creation Request - Request Portal','Dear '+@Name+',<br><br> Your user is created. Please go to <a href="TAG_APP_URL">TAG_APP_URL</a> and set your password using [Forgot Password] option or use Login with Gmail<br>......<br>Your Login:'+@Email+'<br>.....<br><br>Request Portal' , @Email, 1, 1,@UniqueID,0
+
+
+			Select @UserId
+		END
+		ELSE
+			SELECT cast(-1 as int);
+	END
+End
+
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE PROCEDURE [dbo].[DeleteUsers]
+		@UserId int,
+	    @ModifiedBy varchar(100),
+	    @ModifiedOn DateTime
+AS
+BEGIN
+	
+	Update dbo.Users
+		SET 
+		IsActive = 0
+		
+	WHERE UserId = @UserId
+
+	
+	select @UserId
+END
+
+
+
+
+
+
+
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE PROCEDURE [dbo].[EnableDisablePermission]
+    @PermissionId int,
+	@IsActive bit,
+	@ActivityTime datetime,
+	@ActivityBy int
+AS
+BEGIN
+	
+	UPDATE dbo.Permissions SET IsActive = @IsActive, ModifiedOn = @ActivityTime, Modifiedby = @ActivityBy
+	Where ID = @PermissionId
+	
+	Select @PermissionId
+END
+
+
+
+
+
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE Procedure [dbo].[EnableDisableRequestEdit]
+	@RequestID int,
+	@DateTime datetime,
+	@ApproverId int,
+	@flag bit,
+	@remarks varchar(200)
+As 
+Begin
+	   Update dbo.RequestMainData Set CanStudentEdit = @flag, [LastModifiedOn] = @DateTime Where RequestID = @RequestID
+
+	   Declare @text varchar(20) = 'disabled'
+
+	   if @flag = 1
+	   begin
+		Set @text = 'enabled'
+	   end
+
+		Declare @username varchar(100)
+
+		SELECT @username = DesigWithName 
+		FROM dbo.vwApproverWithDesig WHERE ApproverID = @ApproverId
+
+		INSERT INTO [dbo].[ActivityLogTable](RequestId, UserId, Comments, Activity, ActivityTime,IsPrintable,VisibleToUserID,CanReplyUserID)
+		Values(@RequestID, @ApproverId,'Application is ' + @text + ' for editing: ' + @remarks , @username + ' updated request.' ,@DateTime,0,0,0)
+	
+		Select @RequestID
+End
+
+
+
+
+
+
+
+
+
+
+
+
+
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE PROCEDURE [dbo].[EnableDisableRole]
+    @RoleId int,
+	@IsActive bit,
+	@ActivityTime datetime,
+	@ActivityBy int
+AS
+BEGIN
+	
+	UPDATE dbo.Roles SET IsActive = @IsActive, ModifiedOn = @ActivityTime, Modifiedby = @ActivityBy
+	Where ID = @RoleId
+	
+	Select @RoleId
+END
+
+
+
+
+
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE PROCEDURE [dbo].[EnableDisableUser]
+    @UserId int,
+	@IsActive bit,
+	@ActivityTime datetime,
+	@ActivityBy int
+AS
+BEGIN
+	
+	UPDATE dbo.Users SET IsActive = @IsActive, ModifiedOn = @ActivityTime, Modifiedby = @ActivityBy
+	Where UserID = @UserId
+	
+	Select @UserId
+END
+
+
+
+
+
+
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE Procedure [dbo].[Find_Text_In_SP]
+@StringToSearch varchar(100)
+AS
+BEGIN
+SET @StringToSearch = '%' +@StringToSearch + '%'
+SELECT Distinct SO.Name
+FROM sysobjects SO (NOLOCK)
+INNER JOIN syscomments SC (NOLOCK) on SO.Id = SC.ID
+AND SO.Type = 'P'
+AND SC.Text LIKE @stringtosearch
+ORDER BY SO.Name
+
+END
+
+
+
+
+
+
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE Procedure [dbo].[GetActivityLogConversationData]
+	@RequestId int,
+	@activityLogID int,
+	@UserID int,
+	@accessType int,
+	@ApproverId int
+As 
+Begin
+
+		declare @id int = @UserID
+		if @accessType =2 --Assigned
+		begin
+			Set @id = @ApproverId
+		end
+		
+		if dbo.IsValidLogId(@RequestId,@ActivityLogID,@id,@accessType) = 1
+		begin
+			Select al.*,u.Name as UserName 
+			from [dbo].[ActivityLogConversations] al inner join dbo.Users u on al.UserID = u.UserId
+			and al.ActivityLogID = @activityLogID
+			Order by al.MessageTime desc
+		end
+		else 
+		begin
+			Select al.*,'' as UserName 
+			from [dbo].[ActivityLogConversations] al where ConversationID =-1
+		end
+		
+End
+
+
+
+
+
+
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE Procedure [dbo].[GetActivityLogData]
+	@RequestID int,
+	@UserID int,
+	@accessType int
+As 
+Begin
+
+		--declare @RequestID int = 8
+		--declare	@UserID int = 1
+		--declare @accessType int =2
+	
+		Declare @contributors table (userid int)
+		Declare @creatorId int = 0
+
+		if @accessType = 1
+		begin
+			select @creatorId = UserId from dbo.RequestMainData where RequestID = @RequestID
+		end
+		else if @accessType = 2
+		begin
+			insert into @contributors
+			Select distinct ApproverID from dbo.ReqWorkflow where RequestID = @RequestID
+		end
+		else
+		begin
+			insert into @contributors
+			select @UserID
+		end
+
+
+		Select a.Id, a.RequestId, a.UserId, a.Comments, a.Activity, a.ActivityTime, a.IsPrintable, isnull(a.VisibleToUserID,0) as VisibleToUserID, isnull(a.CanReplyUserID,0) as CanReplyUserID,
+				cast(case when a.UserId = @UserID then a.ShowActionPanel else 0 end as bit) as ShowActionPanel,
+				'' as SignatureName, 
+		cast(
+			 (case  when a.ShowActionPanel = 0 then 0 else
+					(case when a.UserID = @UserID then 1 else
+							(case when isnull(a.CanReplyUserID,0) = 0 then 0 
+							  when isnull(a.CanReplyUserID,0) = -1 AND @UserID IN (select userid from @contributors) then 1 
+							  when isnull(a.CanReplyUserID,0) = -2  AND @UserID = @creatorId then 1 
+							  when isnull(a.CanReplyUserID,0) = -3  AND (@UserID IN (select userid from @contributors) OR @UserID = @creatorId) then 1
+							   when isnull(a.CanReplyUserID,0) > 0 AND isnull(a.CanReplyUserID,0) = @UserID  then 1
+							  else 0 end) 
+					 end ) 
+			  end
+			  
+			  ) as bit) as CanReplyFlag
+		from [dbo].[ActivityLogTable] a 
+		Where a.RequestId = @RequestID 
+		and (a.UserID = @UserID 
+			OR ( isnull(a.VisibleToUserID,0) = 0  AND (@UserID IN (select userid from @contributors) OR @UserID = @creatorId))
+			OR ( isnull(a.VisibleToUserID,0) = -1 AND @UserID IN (select userid from @contributors))
+			OR ( isnull(a.VisibleToUserID,0) = -2 AND @UserID = @creatorId)
+			OR ( isnull(a.VisibleToUserID,0) > 0 AND isnull(a.VisibleToUserID,0) = @UserID)
+			)
+		order by a.ActivityTime Desc, a.Id Desc
+End
+
+
+-- execute [dbo].[GetActivityLogData] 8,1,2
+
+
+
+
+
+
+
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE Procedure [dbo].[GetAllDesignations]
+AS 
+BEGIN
+		Select DesignationID,Designation 
+		from dbo.Designations
+		Where IsActive = 1
+END
+
+
+
+
+
+
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE Procedure [dbo].[GetAllPermissions]
+AS 
+BEGIN
+		-- User Permissions
+		Select distinct p.* from dbo.Permissions p
+END
+
+
+
+
+
+
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+
+CREATE Procedure [dbo].[GetAppCountByStatus]
+	@accessType int,
+	@userid int
+AS 
+BEGIN
+
+
+	--Declare @accessType int = 1
+	--Declare @userid int = 1021
+
+
+	if @accessType = 1  OR @accessType = 4 --It means self created or All
+	BEGIN
+		select isnull(count(*),0) as 'All',
+		isnull(Sum(case when RequestStatus = 2 OR RequestStatus = 6  then 1 else 0 end),0) 'Pending',
+		isnull(Sum(case when RequestStatus = 3 then 1 else 0 end),0) 'Accepted',
+		isnull(Sum(case when RequestStatus = 4 then 1 else 0 end),0) 'Rejected',
+		0 as 'NotAssigned',
+		0 as 'RejectedBeforeAssignment'
+		from [dbo].[RequestMainData] Where UserId = case when @accessType = 1 then @userid else UserId end
+	END
+	ELSE if @accessType = 2  --It means assigned
+	BEGIN
+		select isnull(sum(case when rwf.Status = 5 then 0 else 1 end),0) as 'All',
+		isnull(Sum(case when rwf.Status = 2 then 1 else 0 end),0) 'Pending',
+		isnull(Sum(case when rwf.Status = 3 then 1 else 0 end),0) 'Accepted',
+		isnull(Sum(case when rwf.Status = 4 then 1 else 0 end),0) 'Rejected',
+		isnull(Sum(case when rwf.Status = 1 then 1 else 0 end),0) 'NotAssigned'
+		from [dbo].[RequestMainData] rmd INNER JOIN [dbo].[ReqWorkflow] rwf on  rwf.RequestID = rmd.RequestID
+
+		Where rwf.ApproverID = @userid
+	END
+
+END
+
+
+
+
+
+
+
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE Procedure [dbo].[GetApproversByFormID]
+@pFormID int
+AS
+BEGIN
+	
+	Select ah.ApproverID,ah.IsForNewCampus,ah.IsForOldCampus, d.DesigWithName,
+	cast(ROW_NUMBER() OVER (Order by ApprovalOrder) as int) AS ApprovalOrder
+	from [dbo].[ApproverHierarchy] ah 
+	INNER JOIN [dbo].[vwApproverWithDesig] d ON ah.ApproverID = d.ApproverID
+	Where FormID = @pFormID
+	
+END
+
+
+
+
+
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE Procedure [dbo].[GetApproversByRequestId]
+@requestId int
+As 
+Begin
+	--Declare @requestId int
+	--Set @requestId = 18
+
+	Select rwf.ID as WFID, a.ApproverID , a.Login, a.Name, a.Designation, a.Email, rwf.Status as WorkFlowStatus
+	from [dbo].[ReqWorkflow] rwf 
+	INNER JOIN dbo.vwApproverWithDesig a on rwf.ApproverID = a.ApproverID
+	Where rwf.RequestID = @requestId
+	Order by rwf.ApprovalOrder 
+End
+
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE Procedure [dbo].[GetEmailRequestsByUniqueID]
+	@UniqueID varchar(40)
+AS 
+BEGIN
+	
+	Select EmailRequestID, Subject, MessageBody, MessageParameters, EmailTo, EmailCC, EmailBCC, EmailTemplate, 
+	ScheduleType, ScheduleTime, EmailRequestStatus, EntryTime, UniqueID, isnull(RequestID,0) as RequestID 
+	from dbo.EmailRequests
+	Where UniqueID = @UniqueID
+
+END
+
+
+
+
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE Procedure [dbo].[GetPendingRequestsCountByCategoryID_UserID]
+@pFormID int,
+@pUserID int
+AS
+BEGIN
+	
+	Declare @CurrentPendingCount int = 0;
+	Select @CurrentPendingCount = count(*) 
+	FROM dbo.RequestMainData r
+	Where r.UserId = @pUserID AND r.CategoryID = @pFormID And RequestStatus NOT IN (3,4)
+
+	-- Return count of possible new requests
+	Select cast((MaxPendingRequets - @CurrentPendingCount) as int) 
+	from dbo.FormCategories Where CategoryID = @pFormID
+
+END
+
+
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+Create procedure [dbo].[GetPendingRequestsForNotifications]
+
+AS
+Begin
+	Select d.ApproverID,d.UserID,d.Name,d.Designation,d.Email,
+	Datediff(day,Isnull(StatusTime,EntryTime), getdate()) As PendingDays,
+	rm.RequestID,rm.RollNo,fm.Category
+	FROM [dbo].[ReqWorkflow] rw INNER JOIN dbo.vwApproverWithDesig d ON d.ApproverID = rw.ApproverID
+	INNER JOIN dbo.RequestMainData rm on rw.RequestID = rm.RequestID
+	INNER JOIN dbo.FormCategories fm on rm.CategoryID = fm.CategoryID
+	Where Status = 2
+	Order by Name, PendingDays DESC
+End
+
+
+
+
+
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+
+
+
+CREATE Procedure [dbo].[GetRequestAccessParams]
+@RequestId int,
+@accessType int,
+@currUserId int,
+@OnlyValidateRequest bit
+As 
+Begin
+
+	--input variables
+	--Declare @RequestId int = 13
+	--Declare @accessType int =0
+	--Declare @currUserId int = 8
+
+	--output
+	Declare @RecFlag bit = 0
+	Declare @RouteBackFlag bit =0
+	Declare @canStdEditFlag bit = 0
+	Declare @IsPendingForCurrUser bit =0
+	Declare @IsValidAccess bit = 0
+	Declare @AppStatus int =0
+
+	if @accessType = 1  --It means self created
+	BEGIN
+		if(SELECT count(*) from [dbo].[RequestMainData] where RequestID = @requestId and UserID = @currUserId) > 0
+		BEGIN
+			SET @IsValidAccess = 1
+		END
+	END
+	ELSE if @accessType = 2  --It means assigned
+	BEGIN
+		if(Select count(*) from [dbo].[ReqWorkflow] where RequestID = @requestId and ApproverID = @currUserId) > 0
+		BEGIN
+			SET @IsValidAccess = 1
+		END
+	END
+	ELSE if @accessType = 4 --It means All
+	BEGIN
+		if(Select count(*) from [dbo].[ReqWorkflow] where RequestID = @requestId) > 0
+		BEGIN
+			SET @IsValidAccess = 1
+		END
+	END
+
+
+	If @OnlyValidateRequest = 0 AND @IsValidAccess = 1
+	BEGIN
+		--local variables
+		Declare @isParallelAllowed bit =0
+		Declare @data table(ID int identity(1,1), ReqWFID int, ApproverID int, Status int, IsCurrApprover bit)
+
+		Insert into @data(ReqWFID,ApproverID,Status,IsCurrApprover)
+		Select ID,ApproverID,Status,IsCurrApprover from dbo.ReqWorkflow Where RequestID = @RequestId order by ID
+
+		
+		-- If Category allows Reciving, Request is approved and Recieving is not done yet
+		Select @RecFlag = case when fc.IsRecievingAllowed = 1 AND rm.IsRecievingDone =0 AND rm.RequestStatus = 3 then 1 else 0 end,
+		@isParallelAllowed = IsParalApprovalAllowed,
+		@canStdEditFlag = case @accessType when 1 then rm.CanStudentEdit else 0 end,
+		@AppStatus = rm.RequestStatus
+		from [dbo].[FormCategories] fc 
+		inner join [dbo].[RequestMainData] rm on fc.CategoryID = rm.CategoryID and rm.RequestID = @RequestId
+
+
+		-- Check if currently pending for current user
+		if exists(select top 1 * from @data Where ApproverID = @currUserId and Status = 2 and IsCurrApprover = 1)
+		Begin
+			SET @IsPendingForCurrUser = 1
+		End
+
+		-- request is assigned to current user, not parallel approvers allowed and it current user is not first approver
+		if(@isParallelAllowed = 0 
+		and (select count(*) from @data where Status IN (3,4 )) > 0
+		and @IsPendingForCurrUser = 1)
+		begin 
+		 SET @RouteBackFlag = 1
+		end
+	END
+
+	SELECT @IsValidAccess as IsValidAccess, @RecFlag as RecFlag,@RouteBackFlag as RouteBackFlag, @canStdEditFlag as CanStdEditFlag,@IsPendingForCurrUser as IsPendingForCurrUser, @AppStatus as AppStatus
+
+End
+
+-- execute dbo.GetRequestAccessParams 2,2,8,0
+
+
+
+
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+
+CREATE Procedure [dbo].[GetRolePermissionById]
+	@ApproverId int
+AS 
+BEGIN
+		Declare @UserID int = 0
+		select @UserID= UserID from dbo.Approvers Where ApproverID = @ApproverId
+
+		Select distinct r.* from dbo.Roles r 
+		INNER JOIN dbo.UserRoles ur on r.ID = ur.RoleId and ur.UserId = @UserID 
+
+		Select distinct p.*,pm.RoleId from dbo.Permissions p 
+		INNER JOIN [dbo].[PermissionsMapping] pm on p.Id = pm.PermissionId
+		INNER JOIN dbo.UserRoles ur on pm.RoleId = ur.RoleId and ur.UserId = @UserID 
+
+END
+
+/*
+declare @date datetime = getdate()
+execute dbo.ValidateUser 'BITF13M005','123',@date,'123'
+select * from dbo.LoginHistory
+*/
+
+
+
+
+
+
+
+
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE PROCEDURE [dbo].[GetRolesByUserID]
+@UserID int
+AS
+BEGIN
+	SELECT distinct RoleId from dbo.UserRoles Where UserId = @UserID 
+END
+
+
+
+
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+
+CREATE Procedure [dbo].[HandleRecieving]
+	@RequestID int,
+	@ApproverId int,
+	@CreationDate datetime,
+	@Comment varchar(200)
+As 
+Begin
+
+		Update dbo.RequestMainData SET IsRecievingDone = 1 where RequestID = @RequestID
+
+		Declare @username varchar(100)
+
+		SELECT @username=DesigWithName
+		FROM dbo.vwApproverWithDesig WHERE ApproverID = @ApproverId
+
+
+		INSERT INTO [dbo].[ActivityLogTable](RequestId, UserId, Comments, Activity, ActivityTime,IsPrintable)
+		Values(@RequestID, @ApproverId, @Comment, @username + ' has performed recieving activity.' ,@CreationDate,0)
+	
+		INSERT INTO [dbo].[ActivityLogTable](RequestId, UserId, Comments, Activity, ActivityTime,IsPrintable)
+		Values(@RequestID, @ApproverId, '', 'Application is closed now!' ,@CreationDate,0)
+
+		Select @RequestID
+End
+
+
+
+
+
+
+
+
+
+
+
+
+
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+CREATE Procedure [dbo].[IsRequestIDValid]
+	@requestId int,
+	@userid int,
+	@accessType int
+AS 
+BEGIN
+
+	if @accessType = 1  --It means self created
+	BEGIN
+		SELECT count(*) from [dbo].[RequestMainData] where RequestID = @requestId and UserID = @userid
+	END
+	ELSE if @accessType = 2  --It means assigned
+	BEGIN
+		Select count(*) from [dbo].[ReqWorkflow] where RequestID = @requestId and ApproverID = @userid
+	END
+	ELSE if @accessType = 4 --It means All
+	BEGIN
+		Select 1
+	END
+
+END
+
+
+
+
+
+
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE Procedure [dbo].[IsValidResetToken]
+@reset_token varchar(50)
+AS
+BEGIN
+	IF (Select count(*) from dbo.users Where ResetToken = @reset_token and IsActive = 1) = 1
+	BEGIN
+		Select cast(1 as bit)
+		RETURN;
+	END
+
+	Select cast(0 as bit)
+
+END
+
+
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+CREATE Procedure [dbo].[RemoveAttachment]
+	@RequestID int,
+	@attachment varchar(50),
+	@DateTime datetime,
+	@UserId int
+As 
+Begin
+	   Update dbo.Attachments SET IsActive = 0 Where [FileName] = @attachment
+
+	   Declare @fileName varchar(50)
+	   
+	   Select @fileName = typeName from dbo.AttachmentTypes where AttachmentTypeID = (Select AttachmentTypeID from dbo.Attachments Where [FileName] = @attachment)
+
+	   Declare @username varchar(100)
+		Select @username= Title + '(' + Name + ')' from dbo.Users where UserId = @UserId
+
+		INSERT INTO [dbo].[ActivityLogTable](RequestId, UserId, Comments, Activity, ActivityTime,IsPrintable,VisibleToUserID,CanReplyUserID)
+		Values(@RequestID, @UserId, 'Attachment [' + @fileName + '] has been removed', @username + ' removed a file.' ,@DateTime,0,0,0)
+	
+		Select @RequestID
+End
+
+
+
+
+
+
+
+
+
+
+
+
+
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+
+
+CREATE Procedure [dbo].[RemoveContributor]
+	@RequestID int,
+	@WfID int,
+	@ApproverIDToRemove int,
+	@currentTime datetime,
+	@CurrentApproverID int,
+	@otherUserLogin varchar(50)
+As 
+Begin
+	
+	-- Append in comment if A user is doing this on behalf of
+		if(@otherUserLogin != '')
+			SET @otherUserLogin = '---------[By '+@otherUserLogin+' on behalf of]'
+
+	   Delete from dbo.ReqWorkflow Where ID = @WfID And RequestID = @RequestID And ApproverID = @ApproverIDToRemove
+
+		/* Activity Log Changes */
+
+		Declare @currUserName varchar(100)
+		SELECT @currUserName = ISNULL(DesigWithName,'')
+		FROM dbo.vwApproverWithDesig WHERE ApproverID = @CurrentApproverID
+
+		Declare @TagetUserName varchar(100)
+		SELECT @TagetUserName = ISNULL(DesigWithName,'')
+		FROM dbo.vwApproverWithDesig WHERE ApproverID = @ApproverIDToRemove
+
+		-- Add log for removed contributors
+		INSERT INTO [dbo].[ActivityLogTable](RequestId, UserId, Comments, Activity, ActivityTime)
+		Select @RequestID, @CurrentApproverID, @TagetUserName + ' is removed from contributors.' + @otherUserLogin, 
+				@currUserName + ' made a change in contributors.' ,@currentTime
+
+	  
+		select cast(1 as int)
+End
+
+
+
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+
+
+
+CREATE Procedure [dbo].[RouteBack]
+	@RequestID int,
+	@ApproverID int,
+	@ApprovalDate datetime,
+	@Remarks varchar(500),
+	@UniqueId varchar(40)
+As 
+Begin
+
+	Declare @email_subj varchar(200)
+	Declare @email_body varchar(500)
+	Declare @to_email varchar(50)
+	Declare @username varchar(100)
+
+	--Also need to handle parallel approval case
+
+	-- Find Last Approver ID
+
+		Declare @rwfId int
+		Declare @prevApproverId int
+
+		Select Top 1 @rwfId = ID,@prevApproverId = ApproverID from dbo.ReqWorkflow 
+		Where RequestID = @RequestID and Status = 3 Order by ApprovalOrder DESC
+
+		if isnull(@rwfId,0) != 0
+		BEGIN
+
+			Declare @requester_email varchar(50)
+			Declare @requester_name varchar(100)
+			Declare @requester_rollno varchar(20)
+			Declare @formName varchar(100)
+	
+			Select @formName = upper(Category)
+			from [dbo].[FormCategories] c INNER JOIN dbo.RequestMainData rmd ON c.CategoryID = rmd.CategoryID
+			Where rmd.RequestID = @RequestID
+
+			SELECT @requester_email = email,@requester_name = name,@requester_rollno = u.Login 
+			from dbo.Users u INNER JOIN dbo.RequestMainData rmd on u.UserId = rmd.UserId and rmd.RequestID = @RequestID
+
+
+			-- Mark Current Approver as 'Not Assigned'
+			Update dbo.ReqWorkflow Set Status = 1,StatusTime = @ApprovalDate,IsCurrApprover=0 where RequestID = @RequestID and ApproverID = @ApproverID
+			
+			SELECT @to_email = email, @username = DesigWithName 
+			FROM dbo.vwApproverWithDesig WHERE ApproverID = @ApproverId
+
+			SET @email_subj = 'ACAD/' + cast(@RequestID as varchar) + ' unassigned from you.';
+			SET @email_body = 'Dear '+@username+',<br><br> An application is unassigned from you.<br>-----<br>Roll no: ' + @requester_rollno + '<br>Name:'+@requester_name+'<br>Type:'+@formName+'<br>Remarks:TAG_REMARKS<br>For Detail: <a href="TAG_APP_URL">TAG_APP_URL</a><br>----<br><br>Request Portal';
+
+			INSERT INTO [dbo].[EmailRequests](Subject, MessageBody, EmailTo, ScheduleType, EmailRequestStatus,UniqueID,RequestID)
+			Select @email_subj, @email_body, @to_email, 1, 1,@UniqueId,@RequestID
+
+			INSERT INTO [dbo].[ActivityLogTable](RequestId, UserId, Comments, Activity, ActivityTime)
+			Values(@RequestID, @ApproverID, @Remarks, 'Request is [Routed Back] By ' + @username + ' to previous approver',@ApprovalDate)
+
+			
+			-- Mark Last approver status as 'Pending'
+			Update dbo.ReqWorkflow Set Status = 2,StatusTime = @ApprovalDate,IsCurrApprover=1 where ID =@rwfId
+
+			Declare @to_username varchar(100)
+
+			SELECT @to_email = email, @to_username = DesigWithName 
+			FROM dbo.vwApproverWithDesig WHERE ApproverID = @prevApproverId
+			SET @email_subj = 'ACAD/' + cast(@RequestID as varchar)+ ' re-assigned to you.';
+			SET @email_body = 'Dear '+@to_username+',<br><br> '+@username+' has routed back an application. Application is re-assigned to you.<br>-----<br>Roll no: ' + @requester_rollno + '<br>Name:'+@requester_name+'<br>Type:'+@formName+'<br>Remarks:TAG_REMARKS<br>For Detail: <a href="TAG_APP_URL">TAG_APP_URL</a><br>----<br><br>Request Portal';
+
+
+			INSERT INTO [dbo].[EmailRequests](Subject, MessageBody, EmailTo, ScheduleType, EmailRequestStatus,UniqueID,RequestID)
+			Select @email_subj, @email_body, @to_email, 1, 1, @UniqueId,@RequestID
+
+			INSERT INTO [dbo].[ActivityLogTable](RequestId, UserId, Comments, Activity, ActivityTime)
+			Values(@RequestID, @ApproverID, 'Routed Back:' + @Remarks, 'Request is re-assigned to ' + @to_username,@ApprovalDate)
+
+			SET @email_subj = 'ACAD/' + cast(@RequestID as varchar) + ' -  ACTION TAKEN';
+			SET @email_body = 'Dear '+@requester_name+',<br><br> '+'Your application is re-assigned to ' +@to_username+'. <br>-----<br>Roll no: ' + @requester_rollno + '<br>Name:'+@requester_name+'<br>Type:'+@formName+'<br>Remarks:TAG_REMARKS<br>For Detail: <a href="TAG_APP_URL">TAG_APP_URL</a><br>----<br><br>Request Portal';
+
+			--Email for Student
+			INSERT INTO [dbo].[EmailRequests](Subject, MessageBody, EmailTo, ScheduleType, EmailRequestStatus,UniqueID,RequestID)
+			Select @email_subj, @email_body, @requester_email, 1, 1,@UniqueId,@RequestID
+
+
+			Update dbo.ActivityLogTable Set IsPrintable = 0 Where IsPrintable =1 And Activity like '%approved%' and RequestId = @RequestID And UserId = @prevApproverId
+
+			Select @RequestID
+		END
+		ELSE 
+		BEGIN
+			Select cast(-1 as int)
+		END
+		
+		
+End
+
+
+
+
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+CREATE Procedure [dbo].[SaveAttachment]
+	@RequestID int,
+	@fileName varchar(100),
+	@attachment varchar(50),
+	@CreationDate datetime,
+	@UserId int
+As 
+Begin
+	   Declare @typeId int
+	   Select @typeId = AttachmentTypeID from dbo.AttachmentTypes where typeName = @fileName
+
+	   if @typeId is null
+	   Begin
+		INSERT INTO dbo.AttachmentTypes(typeName) 
+		Select @fileName
+		Select @typeId = SCOPE_IDENTITY()
+	   End 
+	   
+	   Insert into dbo.Attachments(RequestID, AttachmentTypeID, UploadDate, IsActive, FileName)
+	   Select @RequestID, @typeId, @CreationDate, 1, @attachment
+
+
+		Declare @username varchar(100)
+		Select @username= Title + '(' + Name + ')' from dbo.Users where UserId = @UserId
+
+		INSERT INTO [dbo].[ActivityLogTable](RequestId, UserId, Comments, Activity, ActivityTime,IsPrintable,VisibleToUserID,CanReplyUserID)
+		Values(@RequestID, @UserId, '[' + @fileName + '] is uploaded', @username + ' uploaded a file.' ,@CreationDate,0,0,0)
+	
+		Select @RequestID
+End
+
+
+
+
+
+
+
+
+
+
+
+
+
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE procedure [dbo].[SaveContactUs]
+	@ID bigint,
+	@Name varchar(100),
+	@Email varchar(100),
+	@MachineIP varchar(20),
+	@Description varchar(500),
+	@CreationDate datetime
+AS
+Begin
+	Declare @return bigint=1
+	Insert into dbo.ContactUs(Name,Email,MachineIP, Description,EntryTime)
+	values( @Name,@Email,@MachineIP,@Description,@CreationDate)
+	select @return
+End
+
+
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE Procedure [dbo].[SaveContributorsForForm]
+@pFormID int,
+@pList ArrayIntFlags READONLY -- ApproverID, Order, IsNewCampus,IsOldCampus
+AS
+BEGIN
+
+	--Declare @pFormID int = 2
+	--Declare @pList ArrayInt
+	--insert into @pList Select 1
+	--insert into @pList Select 3
+
+	
+	Delete from [dbo].[ApproverHierarchy] Where FormID = @pFormID and ApproverID NOT IN (select ID1 from @pList)
+
+	Update t1 SET t1.ApprovalOrder = p.ID2, 
+		   t1.IsForNewCampus = p.Flag1, 
+		   t1.IsForOldCampus = p.Flag2
+	From [dbo].[ApproverHierarchy] t1
+	INNER JOIN @pList p ON t1.ApproverID = p.ID1 and t1.FormID = @pFormID
+
+	Insert into [dbo].[ApproverHierarchy](FormID, ApproverID, ApprovalOrder, IsForNewCampus, IsForOldCampus)
+	select @pFormID, ID1,ID2,Flag1,Flag2 from @pList 
+	where ID1 not IN (select ApproverID from [dbo].[ApproverHierarchy] Where FormID = @pFormID)
+
+	Select @pFormID
+
+END
+
+
+
+
+
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE procedure [dbo].[SaveGmailLoginRequest]
+@Email varchar(100),
+@Name varchar(100),
+@Gmail_Id varchar(50),
+@Gmail_Pic varchar(200),
+@CreatedOn datetime,
+@UniqueID varchar(40)
+As
+Begin
+
+
+
+	DECLARE @ID BIGINT = 0
+
+	if(Exists(Select * from dbo.Users where Email = @Email))
+	BEGIN
+		SET @ID = -1
+	END
+	ELSE
+	BEGIN
+		Declare @IsUsed bit = 0
+		SELECT @ID = ID, @IsUsed = IsUsed FROM dbo.GmailLoginRequests WHERE Email = @Email
+		IF ISNULL(@ID,0) > 0
+		BEGIN
+			UPDATE dbo.GmailLoginRequests 
+			SET EntryTime = @CreatedOn,  Name = @Name, Gmail_Id = @Gmail_Id,Gmail_Pic = @Gmail_Pic
+			WHERE ID = @ID AND IsUsed = 0
+		END
+		ELSE
+		BEGIN
+			
+			INSERT INTO [dbo].[EmailRequests](Subject, MessageBody, EmailTo, ScheduleType, EmailRequestStatus,UniqueID,RequestID)
+			Select 'New User Request via Google Login - Request Portal',@Email + ' ' + @Name , 'bilal.shahzad@pucit.edu.pk', 1, 1,@UniqueId,0
+			UNION ALL
+			Select 'New User Request via Google Login - Request Portal','Dear User,<br><br> Your user does not exist in our system. Your request is noted. We''ll let you know once your user is created.<br><br>Request Portal' , @Email, 1, 1,@UniqueId,0
+
+			INSERT INTO dbo.GmailLoginRequests(Email, Name, Gmail_Id, Gmail_Pic, EntryTime, IsUsed)
+			Select @Email,@Name,@Gmail_Id,@Gmail_Pic,@CreatedOn,0
+			SET @ID = SCOPE_IDENTITY()
+		END
+	END
+
+	Select @ID
+End
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+CREATE Procedure [dbo].[SaveLogConversation]
+	@RequestId int,
+	@ActivityLogID bigint,
+	@UserID int,
+	@accessType int,
+	@MessageTime datetime,
+	@Message varchar(200),
+	@ApproverId int
+	
+As 
+Begin
+		
+		declare @id int = @UserID
+		if @accessType =2 --Assigned
+		begin
+			Set @id = @ApproverId
+		end
+
+		if dbo.IsValidLogId(@RequestId,@ActivityLogID,@id,@accessType) = 1
+		begin
+			INSERT INTO [dbo].[ActivityLogConversations](ActivityLogID, UserID, Message, MessageTime)
+			Values(@ActivityLogID,@UserID,@Message,@MessageTime)
+			Select cast(SCOPE_IDENTITY() as bigint)
+		end
+		else
+		begin
+			select cast(-1 as bigint)
+		end
+		
+End
+
+
+
+
+
+
+
+
+
+
+
+
+
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE PROCEDURE [dbo].[SavePermission]
+	@Id int,
+	@Name varchar(50),
+	@Description varchar(50),
+	@ActivityTime datetime,
+	@ActivityBy int
+AS
+BEGIN
+	if (@Id > 0)
+	BEGIN
+		Update dbo.Permissions
+			SET 
+			Name = @Name, 
+			Description = @Description,
+			ModifiedOn = @ActivityTime,
+			Modifiedby = @ActivityBy
+			where Id=@Id
+	END
+	ELSE
+	BEGIN
+		
+		INSERT INTO dbo.Permissions(Name ,Description,CreatedOn,CreatedBy,IsActive)
+		VALUES( @Name ,@Description,@ActivityTime,@ActivityBy,1)
+		
+		Select @Id = SCOPE_IDENTITY()
+	END
+
+	Select @Id
+END
+
+
+
+
+
+
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+CREATE Procedure [dbo].[SaveRequest]
+	@RequestID int,
+	@CategoryID int,
+	@UserId int,
+	@RollNo varchar(20),
+	@CreationDate datetime,
+	@TargetSemester int,
+	@Reason varchar(200),
+	@TargetDate datetime,
+	@CurrentSemester int,
+	@Status int,
+	@Subject varchar(50),
+	@UniqueId varchar(40)	
+
+As 
+Begin
+
+	IF @RequestID = 0
+	BEGIN
+
+		Declare @IsOldCampus bit
+		Declare @IsNewCampus bit
+		
+		
+		Declare @requester_email varchar(50)
+		Declare @requester_name varchar(100)
+
+		Select @IsOldCampus= IsOldCampus, @requester_email = email,
+		@requester_name = name
+		from dbo.Users where UserId = @UserId
+
+		IF @IsOldCampus = 1
+			SET @IsNewCampus = 0
+		ELSE
+			SET @IsNewCampus = 1
+
+
+		INSERT INTO [dbo].[RequestMainData](CategoryID, UserId, RollNo, CreationDate, TargetSemester, Reason, TargetDate, CurrentSemester,  RequestStatus, Subject)
+		Values(@CategoryID, @UserId, @RollNo, @CreationDate, @TargetSemester, @Reason, @TargetDate, @CurrentSemester,   @Status, @Subject)
+
+		Select @RequestID = SCOPE_IDENTITY()
+
+		INSERT INTO [dbo].[ActivityLogTable](RequestId, UserId, Comments, Activity, ActivityTime,VisibleToUserID,CanReplyUserID)
+		Values(@RequestID, @UserId,'', @RollNo + ' created application.',@CreationDate,0,0)
+
+
+		Declare @formName varchar(100)
+		Declare @IsParalApprovalAllowed bit  = 0 
+		Declare @DefaultStatusForWF int = 1
+		Declare @DefaultIsCurrApprover bit = 0
+
+		Select @formName = upper(Category), @IsParalApprovalAllowed = IsParalApprovalAllowed 
+		from [dbo].[FormCategories] Where CategoryID = @CategoryID;
+
+		IF @IsParalApprovalAllowed = 1
+		BEGIN
+			SET @DefaultStatusForWF = 2
+			SET @DefaultIsCurrApprover = 1
+		END
+	
+
+		INSERT INTO [dbo].[ReqWorkflow](RequestID, ApproverID,UserID, ApprovalOrder, Status, Remarks, EntryTime, ActionUserID,IsCurrApprover)
+		Select @RequestID, ah.ApproverID,a.UserID, ApprovalOrder, case ApprovalOrder when 1 then 2 else @DefaultStatusForWF end as status,'',@CreationDate,  ah.ApproverID,
+		case ApprovalOrder when 1 then 1 else @DefaultIsCurrApprover end as iscurrentapprover
+		from [dbo].[ApproverHierarchy] ah inner join dbo.Approvers a on ah.ApproverID = a.ApproverID
+		Where ah.FormID = @CategoryID and (IsForNewCampus =@IsNewCampus OR IsForOldCampus = @IsOldCampus)
+		ORDER By ApprovalOrder
+		
+
+		DECLARE @TempTable TABLE (ID INT Identity(1,1), WFID INT)
+		Declare @TempID int = 1
+		Declare @WFID int = 0
+
+
+		INSERT INTO @TempTable(WFID)
+		Select ID  From [dbo].[ReqWorkflow] Where [RequestID] = @RequestID and Status = 2
+		
+		Declare @TotalWFCount int 
+		Select @TotalWFCount = Count(*) from @TempTable
+
+		-- Add email entry for approver
+		Declare @email_subj varchar(200) = 'ASSIGNMENT ALERT - ACAD/' + cast(@RequestID as varchar);
+		--Declare @email_body varchar(500) = 'You have received a new ' + @formName +' APPLICATION From Roll no: ' + @RollNo + ' , please login to Student Request Portal. <br><br> {0}'
+		Declare @email_body varchar(500) = 'Dear TAG_USERNAME,<br><br> An application has been assigned to you for your review. <br>-----<br>Roll no: ' + @RollNo + '<br>Name:'+@requester_name+'<br>Type:'+@formName+'<br>For Detail: <a href="TAG_APP_URL">TAG_APP_URL</a><br>----<br><br>Request Portal';
+		Declare @temp_email_body varchar(1000) = ''
+
+		Declare @to_email varchar(50)
+		Declare @nextApproverUserId int
+		Declare @username varchar(100)
+		-----------------------------------------------------------
+
+		While @TempID <= @TotalWFCount
+		BEGIN 
+
+			Select @WFID = WFID from @TempTable Where ID = @TempID
+
+			Select @nextApproverUserId = rwf.ApproverID  
+			from [dbo].[ReqWorkflow] rwf 
+			Where ID = @WFID
+			
+			SELECT @to_email = email, @username = DesigWithName 
+			FROM dbo.vwApproverWithDesig WHERE ApproverID = @nextApproverUserId
+
+			INSERT INTO [dbo].[ActivityLogTable](RequestId, UserId, Comments, Activity, ActivityTime,VisibleToUserID,CanReplyUserID)
+			Values(@RequestID, @UserId, 'Assigned By System', 'Request is assigned to ' + @username,@CreationDate,0,0)
+			-----------------------------------------------------------
+
+			SET @temp_email_body = Replace(@email_body, 'TAG_USERNAME',@username)
+
+			INSERT INTO [dbo].[EmailRequests](Subject, MessageBody, EmailTo, ScheduleType, EmailRequestStatus,UniqueID,RequestID)
+			Select @email_subj, @temp_email_body, @to_email, 1, 1,@UniqueId,@RequestID
+
+			SET @TempID = @TempID + 1
+
+		END
+
+		-- Add email entry for requester
+		SET @email_subj = 'APPLICATION SUBMITTED - ACAD/' + cast(@RequestID as varchar);
+		SET @temp_email_body = 'Dear '+@requester_name+',<br><br> Application has been created. <br>-----<br>Roll no: ' + @RollNo + '<br>Name:'+@requester_name+'<br>Type:'+@formName+'<br>For Detail: <a href="TAG_APP_URL">TAG_APP_URL</a><br>----<br><br>Request Portal';
+
+		INSERT INTO [dbo].[EmailRequests](Subject, MessageBody, EmailTo, ScheduleType, EmailRequestStatus,UniqueID,RequestID)
+		Select @email_subj, @temp_email_body, @requester_email, 1, 1,@UniqueId,@RequestID
+	END
+
+	Select @RequestID
+End
+
+
+
+
+
+
+
+
+
+
+
+
+
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE Procedure [dbo].[SaveRolePermissionMapping]
+@pRoleID int,
+@pList ArrayInt READONLY --Here ArrayInt is user defined type
+AS
+BEGIN
+
+	--Declare @pRoleID int = 2
+	--Declare @pList ArrayInt
+	--insert into @pList Select 1
+	--insert into @pList Select 3
+
+	Delete from [dbo].[PermissionsMapping] Where RoleId = @pRoleID and PermissionId NOT IN (select ID from @pList)
+
+	Insert into [dbo].[PermissionsMapping](RoleId,PermissionId)
+	select @pRoleID, ID from @pList 
+	where ID not IN (select PermissionID from [dbo].[PermissionsMapping] Where RoleId = @pRoleID)
+
+	Select @pRoleID
+
+END
+
+
+
+
+
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE PROCEDURE [dbo].[SaveRoles]
+	@RoleId int,
+	@Name varchar(50),
+	@Description varchar(50),
+	@ActivityTime datetime,
+	@ActivityBy int
+AS
+BEGIN
+	
+	if (@RoleId > 0)
+	BEGIN
+		Update dbo.Roles
+			SET 
+			Name = @Name, 
+			Description = @Description,
+			ModifiedBy=@ActivityBy,
+			ModifiedOn=@ActivityTime
+		WHERE Id = @RoleId
+
+	END
+	ELSE
+	BEGIN
+		
+		INSERT INTO dbo.Roles(Name ,Description,CreatedBy,CreatedOn,IsActive)
+		VALUES( @Name ,@Description,@ActivityBy,@ActivityTime,1)
+		
+		Select @RoleId = SCOPE_IDENTITY()
+	END
+
+	Select @RoleId
+END
+
+
+
+
+
+
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE Procedure [dbo].[SaveUserRoleMapping]
+@pUserID int,
+@pList ArrayInt READONLY --Here ArrayInt is user defined type
+AS
+BEGIN
+
+	--Declare @pUserID int = 7
+	--Declare @pList ArrayInt
+	--insert into @pList Select 1
+	--insert into @pList Select 3
+
+	Delete from [dbo].[UserRoles] Where UserId = @pUserID and RoleId NOT IN (select ID from @pList)
+
+	Insert into [dbo].[UserRoles](UserId,RoleId)
+	select @pUserID, ID from @pList 
+	where ID not IN (select RoleId from [dbo].[UserRoles] Where UserId = @pUserID)
+
+	Select @pUserID
+
+END
+
+
+
+
+
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE PROCEDURE [dbo].[SaveUsers]
+		@UserId int,
+	   @Login varchar(50)
+	  ,@Password varchar(100)
+      ,@Name varchar(100)
+      ,@Email varchar(100),
+	  @ActivityTime datetime,
+	  @ActivityBy int
+      ,@Title varchar(100)
+      ,@StdFatherName varchar(100)
+      ,@Section varchar(100)
+      ,@IsContributor bit
+      ,@IsOldCampus bit
+	  ,@ApprDesignations ArrayInt2 READONLY
+AS
+BEGIN
+	
+	if (@UserId > 0)
+	BEGIN
+
+		Update dbo.Users 
+			SET Login = @Login, 
+			Password = @Password, 
+			Name = @Name, 
+			Email=@Email, 
+			ModifiedOn = @ActivityTime,
+			Modifiedby = @ActivityBy,
+			Title=@Title, 
+			StdFatherName = @StdFatherName,
+			Section=@Section, 
+			IsOldCampus = @IsOldCampus
+			WHERE UserId = @UserId
+
+			if(@IsContributor = 1)
+			BEGIN
+				Update dbo.Approvers SET IsActive = 0
+				Where UserId = @UserId and DesignationID NOT IN (Select ID2 From @ApprDesignations)
+
+				Update dbo.Approvers SET IsActive = 1
+				Where UserId = @UserId and DesignationID IN (Select ID2 From @ApprDesignations)
+
+				INSERT INTO dbo.Approvers(UserID,DesignationID,IsActive)
+				Select @UserId, ID2,1 
+				from @ApprDesignations Where ID2 NOT IN (Select DesignationID from dbo.Approvers 
+				Where UserId = @UserId)		
+
+			END
+	END
+	ELSE
+	BEGIN
+		INSERT INTO dbo.Users(Login , Password , Name ,Email, CreatedOn,CreatedBy,IsActive,Title, 
+			StdFatherName ,
+			Section, 
+			IsContributor, 
+			IsOldCampus)
+		VALUES(@Login , @Password , @Name ,@Email,@ActivityTime,@ActivityBy,1,@Title,@StdFatherName,@Section,@IsContributor,@IsOldCampus)
+		
+		Select @UserId = SCOPE_IDENTITY()
+
+		if(@IsContributor = 1)
+		BEGIN
+			INSERT INTO dbo.Approvers(UserID,DesignationID,IsActive)
+			Select @UserId, ID2,1 from @ApprDesignations
+		END
+		
+	END
+
+	Select @UserId
+END
+
+
+
+
+
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+CREATE Procedure [dbo].[SearchApplications]
+	@rollNo varchar(50),
+	@name varchar(50),
+	@startDate date,
+	@endDate date,
+	@status int,
+	@category int,
+	@accessType int,
+	@userid int
+AS 
+BEGIN
+	
+	--Declare @rollNo varchar(50) = ''
+	--Declare @name varchar(50) = ''
+	--Declare @startDate date =  '1900-01-01'
+	--Declare @endDate date = '2100-01-01'
+	--Declare @status int = 6
+	--Declare @category int = 0
+	--Declare @accessType int = 1
+	--Declare @userid int = 1021
+
+
+	if @accessType = 1  --It means self created
+	BEGIN
+		SELECT rmd.RequestID as ApplicationId, rmd.RollNo, rmd.CreationDate as EntryTime, fc.Category as [Subject], rmd.RequestStatus as Status
+		from [dbo].[RequestMainData] rmd 
+		INNER JOIN [dbo].[FormCategories] fc ON rmd.CategoryID = fc.CategoryID
+		WHERE UserId = @userid
+		AND (cast(rmd.CreationDate as date) Between @startDate and @endDate) 
+		AND rmd.CategoryID = (case when @category > 0 then @category else rmd.CategoryID end)
+		AND rmd.RequestStatus = (case when @status > 0 then @status else rmd.RequestStatus end)
+		Order by rmd.CreationDate DESC
+	END
+	ELSE if @accessType = 2  --It means assigned
+	BEGIN
+		SELECT rmd.RequestID as ApplicationId, rmd.RollNo, rmd.CreationDate as EntryTime, fc.Category as [Subject], rwf.Status
+		from [dbo].[RequestMainData] rmd 
+		INNER JOIN [dbo].[FormCategories] fc ON rmd.CategoryID = fc.CategoryID
+		INNER JOIN [dbo].[ReqWorkflow] rwf on rwf.RequestID = rmd.RequestID
+		INNER JOIN dbo.Users u on u.UserId = rmd.UserId
+		WHERE u.Login like '%' + @rollNo +'%'
+		AND u.Name like '%' + @name +'%'
+		AND (cast(rmd.CreationDate as date) Between @startDate and @endDate) 
+		AND rmd.CategoryID = (case when @category > 0 then @category else rmd.CategoryID end)
+		AND rwf.Status = (case when @status > 0 then @status else rwf.Status end) AND rwf.Status != 5 
+		And rwf.ApproverID = @userid
+		Order by rmd.CreationDate DESC
+	END
+	ELSE if @accessType = 4 --It means All
+	BEGIN
+		SELECT rmd.RequestID as ApplicationId, rmd.RollNo, rmd.CreationDate as EntryTime, fc.Category as [Subject] , rmd.RequestStatus as Status
+		from [dbo].[RequestMainData] rmd 
+		INNER JOIN [dbo].[FormCategories] fc ON rmd.CategoryID = fc.CategoryID
+		INNER JOIN dbo.Users u on u.UserId = rmd.UserId
+		WHERE u.Login like '%' + @rollNo +'%'
+		AND u.Name like '%' + @name +'%'
+		AND (cast(rmd.CreationDate as date) Between @startDate and @endDate) 
+		AND rmd.CategoryID = (case when @category > 0 then @category else rmd.CategoryID end)
+		AND rmd.RequestStatus = (case when @status > 0 then @status else rmd.RequestStatus end)
+		Order by rmd.CreationDate DESC
+	END
+
+END
+
+
+
+
+
+
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE Procedure [dbo].[SearchApprover]
+@key varchar(20)
+As 
+Begin
+	
+	Select a.ApproverID , a.Login, a.Name, a.Designation, a.Email, 0 as WorkFlowStatus
+	FROM dbo.vwApproverWithDesig a
+	where a.Designation like '%' +@key+ '%' 
+	OR a.Name like '%' +@key+ '%' 
+	order by a.Name	
+
+End
+
+
+
+
+
+
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+
+CREATE PROCEDURE [dbo].[SearchContactUs]
+	@Name varchar(100),
+	@Email varchar(100),
+	@startDate date,
+	@endDate date,
+	@pageSize int,
+	@pageIndex int
+AS
+	BEGIN
+		Select count(*) 
+		from dbo.ContactUs rmd
+		where (rmd.Name like '%'+@Name + '%'
+			  and rmd.Email like '%'+ @Email + '%'
+			  and (cast(rmd.EntryTime as date) Between @startDate and @endDate) )
+			
+
+	Select ID,Name,Email,Description,EntryTime,MachineIP 
+		from dbo.ContactUs rmd
+		where (rmd.Name like '%'+@Name + '%'
+			  and rmd.Email like '%'+ @Email + '%'
+			  and (cast(rmd.EntryTime as date) Between @startDate and @endDate))
+		 Order by rmd.ID	  
+		OFFSET @pageIndex*@pageSize ROWS
+		FETCH NEXT @pageSize ROWS ONLY
+END
+
+
+
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE PROCEDURE [dbo].[SearchForgotPasswordLog]
+	@Login varchar(100),
+	@startDate date,
+	@endDate date,
+	@pageSize int,
+	@pageIndex int
+AS
+	BEGIN
+		Select count(*) 
+		from dbo.ForgotPasswordLog rmd
+		where (rmd.Login like '%'+@Login + '%'
+			  and (cast(rmd.EntyDate as date) Between @startDate and @endDate) )
+			
+
+	Select ID, Login, Token, IPAddress as MachineIP, Found, URL, EntyDate, IsUsed
+		from dbo.ForgotPasswordLog rmd
+		where (rmd.Login like '%'+@Login + '%'
+			  and (cast(rmd.EntyDate as date) Between @startDate and @endDate) )
+		 Order by rmd.ID DESC	  
+		OFFSET @pageIndex*@pageSize ROWS
+		FETCH NEXT @pageSize ROWS ONLY
+END
+
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE Procedure [dbo].[SearchGoogleLoginRequests]
+	@textToSearch varchar(20),
+	@isactive int,
+	@pageSize int,
+	@pageIndex int
+	
+AS 
+BEGIN
+		Select count(*) 
+		from dbo.GmailLoginRequests  rmd 
+		where (rmd.Name like '%'+ @textToSearch + '%'
+			  OR rmd.email like '%'+ @textToSearch + '%')
+			  And rmd.isused = case when @isactive = -1 then rmd.isused else @isactive end
+
+		SELECT rmd.ID, rmd.Name, rmd.Email,rmd.IsUsed, IsNull(rmd.UserId,0) as UserId, isnull(rmd.UserCreatedOn, '1900-01-01') as UserCreatedOn,rmd.EntryTime
+		 from dbo.GmailLoginRequests rmd
+		where (rmd.Name like '%'+ @textToSearch + '%'
+			  OR rmd.email like '%'+ @textToSearch + '%')
+			  And rmd.isused = case when @isactive = -1 then rmd.isused else @isactive end
+			  
+		Order by rmd.EntryTime Desc
+		OFFSET @pageIndex*@pageSize ROWS
+		FETCH NEXT @pageSize ROWS ONLY
+END
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE PROCEDURE [dbo].[SearchLoginHistory]
+	@login varchar(20),
+	@machineip varchar(20),
+	@startDate date,
+	@endDate date,
+	@pageSize int,
+	@pageIndex int
+AS
+	BEGIN
+		Select count(*) 
+		from [dbo].[LoginHistory] rmd
+		where (rmd.LoginID like '%'+@login + '%'
+			  and rmd.MachineIP like '%'+ @machineip + '%'
+			  and (cast(rmd.LoginTime as date) Between @startDate and @endDate) )
+			
+
+	Select LoginHistoryID,UserID,LoginID,MachineIP,LoginTime 
+		from [dbo].[LoginHistory] rmd
+		where (rmd.LoginID like '%'+@login + '%'
+			  and rmd.MachineIP like '%'+ @machineip + '%'
+			  and (cast(rmd.LoginTime as date) Between @startDate and @endDate))
+		 Order by rmd.LoginHistoryID	  
+		OFFSET @pageIndex*@pageSize ROWS
+		FETCH NEXT @pageSize ROWS ONLY
+END
+
+
+
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+Create Procedure [dbo].[SearchUserForAutoComplete]
+@key varchar(20)
+As 
+Begin
+	
+	Select UserId, Login, Name
+	from dbo.Users
+	where Login like '%' +@key+ '%' 
+	OR Name like '%' +@key+ '%' 
+End
+
+
+
+
+
+
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+-- execute [dbo].[SearchUsers] '','','',-1,-1,-1,10,1
+
+CREATE Procedure [dbo].[SearchUsers]
+	@textToSearch varchar(20),
+	@isoldcampus int,
+	@iscontributor int,
+	@isactive int,
+	@pageSize int,
+	@pageIndex int
+	
+AS 
+BEGIN
+		Select count(*) 
+		from [dbo].[Users] rmd 
+		where (rmd.Name like '%'+ @textToSearch + '%'
+			  OR rmd.email like '%'+ @textToSearch + '%'
+			  OR rmd.section like '%'+ @textToSearch + '%'
+			  OR rmd.Login like '%'+ @textToSearch + '%')
+			  And rmd.IsActive = case when @isactive = -1 then rmd.IsActive else @isactive end
+			  And rmd.IsContributor = case when @iscontributor = -1 then rmd.IsContributor else @iscontributor end
+			  And rmd.IsOldCampus = case when @isoldcampus = -1 then rmd.IsOldCampus else @isoldcampus end
+			 And rmd.UserId > 2
+
+		SELECT UserId, Login, Name, Title, Email, SignatureName, StdFatherName, 
+		Section, IsContributor, IsOldCampus, IsActive
+		 from [dbo].[Users] rmd 
+		where (rmd.Name like '%'+ @textToSearch + '%'
+			  OR rmd.email like '%'+ @textToSearch + '%'
+			  OR rmd.section like '%'+ @textToSearch + '%'
+			  OR rmd.Login like '%'+ @textToSearch + '%')
+			  And rmd.IsActive = case when @isactive = -1 then rmd.IsActive else @isactive end
+			  And rmd.IsContributor = case when @iscontributor = -1 then rmd.IsContributor else @iscontributor end
+			  And rmd.IsOldCampus = case when @isoldcampus = -1 then rmd.IsOldCampus else @isoldcampus end
+			   And rmd.UserId > 2
+		Order by rmd.UserId
+		OFFSET @pageIndex*@pageSize ROWS
+		FETCH NEXT @pageSize ROWS ONLY
+END
+
+
+
+
+
+
+
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE Procedure [dbo].[Swap_Approvers]
+@RequestID int,
+@pFirstApproverID int,
+@pSecondApproverID int,
+@ActivityDateTime datetime,
+@Remarks varchar(500),
+@UniqueId varchar(40)
+AS
+BEGIN
+Declare @result bit = 0
+		Declare @message varchar(100) =''
+
+		Declare @IsParallel bit
+	
+		Select @IsParallel = IsParalApprovalAllowed from dbo.FormCategories fm INNER JOIN dbo.RequestMainData rm
+		ON fm.CategoryID = rm.CategoryID And rm.RequestID = @RequestID
+	
+		IF(@IsParallel = 1)
+		BEGIN
+			SELECT cast(0 as bit) as success, 'Not Allowed for Parallel Approval Forms' As error
+			Return;
+		END 
+
+
+		Declare @FirstApproverWFID int
+		Declare @SecondApproverWFID int
+
+		Declare @FirstApproverWFStatus int
+		Declare @SecondApproverWFStatus int
+	
+		Declare @FirstApproverWFOrder int
+		Declare @SecondApproverWFOrder int
+
+		Declare @FirstIsCurrentApprover bit
+		Declare @SecondIsCurrentApprover bit
+
+		Select @FirstApproverWFID = rf.ID, 
+			   @FirstApproverWFStatus = rf.Status, 
+			   @FirstApproverWFOrder = rf.ApprovalOrder,
+			   @FirstIsCurrentApprover = IsCurrApprover
+		from dbo.ReqWorkflow rf Where RequestID = @RequestID And ApproverID = @pFirstApproverID
+
+		Select @SecondApproverWFID = rf.ID, 
+			   @SecondApproverWFStatus = rf.Status, 
+			   @SecondApproverWFOrder = rf.ApprovalOrder,
+			   @SecondIsCurrentApprover = IsCurrApprover
+		from dbo.ReqWorkflow rf Where RequestID = @RequestID And ApproverID = @pSecondApproverID
+
+		IF (@FirstApproverWFStatus =2  AND @SecondApproverWFStatus = 1) --First Approver is Assigned, Second Approver is Not-Assigned
+		BEGIN
+			
+			BEGIN Transaction 
+				BEGIN TRY  
+
+				    /*Get Application Request Detail */
+					Declare @requester_email varchar(50)
+					Declare @requester_name varchar(100)
+					Declare @requester_rollno varchar(20)
+					Declare @formName varchar(100)
+	
+					Select @formName = upper(Category)
+					from [dbo].[FormCategories] c INNER JOIN dbo.RequestMainData rmd ON c.CategoryID = rmd.CategoryID
+					Where rmd.RequestID = @RequestID
+
+					SELECT @requester_email = email,@requester_name = name,@requester_rollno = u.Login 
+					from dbo.Users u INNER JOIN dbo.RequestMainData rmd on u.UserId = rmd.UserId and rmd.RequestID = @RequestID
+					/*-------------------------------------------------*/
+
+					Declare @email_subj varchar(200)
+					Declare @email_body varchar(500)
+					Declare @to_email varchar(50)
+					Declare @username varchar(100)
+					Declare @username2 varchar(100)
+
+					-- Update Data of First Approver with data of second approver
+					Update dbo.ReqWorkflow 
+					SET Status = @SecondApproverWFStatus, ApprovalOrder = @SecondApproverWFOrder, IsCurrApprover = @SecondIsCurrentApprover
+					Where ID = @FirstApproverWFID
+		
+					SELECT @to_email = email, @username = DesigWithName 
+					FROM dbo.vwApproverWithDesig WHERE ApproverID = @pFirstApproverID
+
+					SET @email_subj = 'ACAD/' + cast(@RequestID as varchar) + ' unassigned from you.';
+					SET @email_body = 'Dear '+@username+',<br><br> An application is unassigned from you.<br>-----<br>Roll no: ' + @requester_rollno + '<br>Name:'+@requester_name+'<br>Type:'+@formName+'<br>Remarks:TAG_REMARKS<br>For Detail: <a href="TAG_APP_URL">TAG_APP_URL</a><br>----<br><br>Request Portal';
+					
+
+					INSERT INTO [dbo].[EmailRequests](Subject, MessageBody, EmailTo, ScheduleType, EmailRequestStatus,UniqueID,RequestID)
+					Select @email_subj, @email_body, @to_email, 1, 1,@UniqueId,@RequestID
+
+					-- Update Data of Second Approver with data of first approver
+					Update dbo.ReqWorkflow 
+					SET Status = @FirstApproverWFStatus, ApprovalOrder = @FirstApproverWFOrder, IsCurrApprover = @FirstIsCurrentApprover
+					Where ID = @SecondApproverWFID
+
+					SELECT @to_email = email, @username2 = DesigWithName 
+					FROM dbo.vwApproverWithDesig WHERE ApproverID = @pSecondApproverID
+
+					SET @email_subj = 'ASSIGNMENT ALERT - ACAD/' + cast(@RequestID as varchar);
+					SET @email_body = 'Dear '+@username2+',<br><br> An application has been assigned to you for your review. <br>-----<br>Roll no: ' + @requester_rollno + '<br>Name:'+@requester_name+'<br>Type:'+@formName+'<br>For Detail: <a href="TAG_APP_URL">TAG_APP_URL</a><br>----<br><br>Request Portal';
+
+					INSERT INTO [dbo].[EmailRequests](Subject, MessageBody, EmailTo, ScheduleType, EmailRequestStatus,UniqueID,RequestID)
+					Select @email_subj, @email_body, @to_email, 1, 1, @UniqueId,@RequestID
+		
+					INSERT INTO [dbo].[ActivityLogTable](RequestId, UserId, Comments, Activity, ActivityTime)
+					Values(@RequestID, @pFirstApproverID, @Remarks, 'Request Approval Order is Swapped By ' + @username + ' with ' + @username2 ,@ActivityDateTime)
+
+					INSERT INTO [dbo].[ActivityLogTable](RequestId, UserId, Comments, Activity, ActivityTime)
+					Values(@RequestID, @pFirstApproverID, 'Swapped', 'Request is un-assigned from ' + @username ,@ActivityDateTime)
+
+					INSERT INTO [dbo].[ActivityLogTable](RequestId, UserId, Comments, Activity, ActivityTime)
+					Values(@RequestID, @pFirstApproverID, 'Swapped', 'Request is assigned to ' + @username2 ,@ActivityDateTime)
+					COMMIT; -- commit transaction
+					SELECT cast(1 as bit) as success, 'Swap is completed.' As error
+					Return;
+				END TRY
+				BEGIN CATCH
+					Rollback; -- rollback the transaction
+					SELECT cast(0 as bit) as success, 'Some problem has occurred during transaction.' As error
+					Return;
+				END CATCH
+		END
+		ELSE
+		BEGIN
+			SELECT cast(0 as bit) as success, 'Swap is only allowed if First Approver Status is Assigned & Second Approver Status is Pending.' As error
+			Return;
+		END
+	
+
+END
+
+
+
+
+
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+CREATE Procedure [dbo].[UpdateActivityLogActionItem]
+	@RequestID int,
+	@ActID int,
+	@DateTime datetime,
+	@UserId int,
+	@type int,
+	@value int	
+As 
+Begin
+
+	IF @type = 1 
+	BEGIN
+	 Update [dbo].[ActivityLogTable]
+	 SET VisibleToUserID = @value, UpdatedTime = @DateTime
+	 Where Id = @ActID and UserId = @UserId and RequestId = @RequestID
+	END
+
+	IF @type = 2
+	BEGIN
+	 Update [dbo].[ActivityLogTable]
+	 SET CanReplyUserID = @value, UpdatedTime = @DateTime
+	 Where Id = @ActID and UserId = @UserId and RequestId = @RequestID
+	END
+	  
+	select cast(1 as int)
+End
+
+
+
+
+
+
+
+
+
+
+
+
+
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+CREATE Procedure [dbo].[UpdateAttachment]
+	@RequestID int,
+	@attachment varchar(50),
+	@Datetime datetime,
+	@UserId int,
+	@oldattachment varchar(50)
+As 
+Begin
+
+	   Declare @fileName varchar(50)
+	   Select @fileName = typeName from dbo.AttachmentTypes where AttachmentTypeID = (Select AttachmentTypeID from dbo.Attachments Where [FileName] = @oldattachment)
+	   
+	   Update dbo.Attachments SET FileName = @attachment Where FileName = @oldattachment
+
+		Declare @username varchar(100)
+		Select @username= Title + '(' + Name + ')' from dbo.Users where UserId = @UserId
+
+		INSERT INTO [dbo].[ActivityLogTable](RequestId, UserId, Comments, Activity, ActivityTime,IsPrintable,VisibleToUserID,CanReplyUserID)
+		Values(@RequestID, @UserId, '[' + @fileName + '] is uploaded again', @username + ' updated a file.' ,@Datetime,0,0,0)
+	
+		Select @RequestID
+End
+
+
+
+
+
+
+
+
+
+
+
+
+
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE Procedure [dbo].[UpdateCGPA]
+	@RequestID int,
+	@CGPA float,
+	@DateTime datetime,
+	@ApproverId int,
+	@otherUserLogin varchar(50)
+As 
+Begin
+	
+	-- Append in comment if A user is doing this on behalf of
+	if(@otherUserLogin != '')
+		SET @otherUserLogin = '---------[By '+@otherUserLogin+' on behalf of]'
+
+	Declare @old_cgpa float =0
+
+	select @old_cgpa=isnull(CGPA,0) from [dbo].[BonafideCertificateData] Where RequestID  = @RequestID
+
+	Update t SET CGPA = @CGPA, UpdatedTime = @DateTime, ModifiedBy = @ApproverId
+	from [dbo].[BonafideCertificateData] t inner join dbo.RequestMainData rmc on t.RequestID = rmc.RequestID and rmc.CategoryID = 8
+	Where t.RequestID  = @RequestID  
+	 
+	
+	Declare @username varchar(100)
+		
+	SELECT @username = DesigWithName 
+	FROM dbo.vwApproverWithDesig WHERE ApproverID = @ApproverId
+	
+	INSERT INTO [dbo].[ActivityLogTable](RequestId, UserId, Comments, Activity, ActivityTime,IsPrintable,VisibleToUserID,CanReplyUserID,ShowActionPanel)
+	Values(@RequestID, @ApproverId, 'CGPA is updated from ['+cast(@old_cgpa as varchar)+'] to ['+ cast(@CGPA as varchar)+']' + @otherUserLogin, @username + ' update CGPA.' ,@DateTime,0,0,0,0)
+	
+
+	  
+	select cast(1 as int)
+End
+
+
+
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+
+CREATE Procedure [dbo].[UpdateContributorsOrder]
+	@RequestID int,
+	@Approvers ArrayInt3 READONLY,
+	@currentTime datetime,
+	@CurrentApproverID int,
+	@otherUserLogin varchar(50)
+As 
+Begin
+		 -- Find max approval order to be used for new entries
+		Declare @maxApprOrder int  =0 
+		Select @maxApprOrder = max(ApprovalOrder) 
+		FROM dbo.ReqWorkflow Where RequestID = @requestId And Status != 1
+
+		DECLARE @oldWorkFlowOrder VARCHAR(MAX)
+		SELECT @oldWorkFlowOrder = COALESCE(@oldWorkFlowOrder + '=> ', '') + DesigWithName
+		FROM [dbo].[ReqWorkflow] r INNER JOIN dbo.vwApproverWithDesig a on r.ApproverID = a.ApproverID
+		Where r.RequestID = @RequestID
+		Order by r.ApprovalOrder
+		
+
+		-- Update Approval Orders
+		Update r SET r.ApprovalOrder = a.ID3 + @maxApprOrder 
+		From [dbo].[ReqWorkflow] r INNER JOIN @Approvers a 
+		ON  r.ID = a.ID1  -- WFID 
+		AND r.ApproverID = a.ID2 -- ApproverID
+		AND r.Status = 1 -- Pending
+
+
+		-- Append in comment if A user is doing this on behalf of
+		if(@otherUserLogin != '')
+			SET @otherUserLogin = '---------[By '+@otherUserLogin+' on behalf of]'
+
+		
+		/* Activity Log Changes */
+		Declare @currUserName varchar(100)
+		SELECT @currUserName = ISNULL(DesigWithName,'')
+		FROM dbo.vwApproverWithDesig WHERE ApproverID = @CurrentApproverID
+
+
+		-- Add log for added contributors
+		INSERT INTO [dbo].[ActivityLogTable](RequestId, UserId, Comments, Activity, ActivityTime)
+		Select @RequestID, @CurrentApproverID, 'Approvers Order is changed in workflow.' + @otherUserLogin + ' Earlier It was: ' + @oldWorkFlowOrder, 
+				@currUserName + ' made a change in contributors.' ,@currentTime
+					  
+		select cast(1 as int)
+End
+
+
+
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+CREATE Procedure [dbo].[UpdatePassword]
+@Token_Login varchar(50),
+@CurrPassword varchar(50),
+@NewPassword varchar(50),
+@CurrTime datetime,
+@ModifiedBy int,
+@IsChangePassword bit
+AS
+BEGIN
+	
+	IF @IsChangePassword = 1 -- Change Password
+	BEGIN
+		IF  (SELECT count(*) FrOM dbo.Users
+			Where Login =@Token_Login AND Password = @CurrPassword and IsActive = 1 and IsDisabledForLogin =0) = 1
+		BEGIN
+			Update dbo.Users set Password = @NewPassword, ModifiedBy =@ModifiedBy, ModifiedOn = @CurrTime 
+			Where Login =@Token_Login AND Password = @CurrPassword and IsActive = 1 and IsDisabledForLogin =0
+			Select cast(1 as bit)
+			RETURN;
+		END
+	END
+	ELSE  -- RESET Password
+	BEGIN
+		IF (Select count(*) from dbo.users Where ResetToken =@Token_Login  and IsActive = 1) = 1
+		BEGIN
+			Update dbo.Users set Password = @NewPassword, ModifiedBy =@ModifiedBy, ModifiedOn = @CurrTime, ResetToken=null 
+			Where ResetToken =@Token_Login  and IsActive = 1
+
+			Update dbo.ForgotPasswordLog SET IsUsed = 1,UpdatedOn = @CurrTime Where Token = @Token_Login
+
+			Select cast(1 as bit)
+			RETURN;
+		END
+	END
+
+	Select cast(0 as bit)
+
+END
+
+
+
+
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE PROCEDURE [dbo].[UpdateResetPasswordToken]
+	@email_login varchar(50),
+	@guid varchar(50),
+	@ipaddress varchar(20),
+	@currTime datetime,
+	@url varchar(100)
+AS
+BEGIN
+	Declare @email varchar(50) = ''
+	
+
+	IF( Select count(*) FROM dbo.Users where login = @email_login or email = @email_login
+		And isactive = 1 and IsDisabledForLogin = 0) = 1
+	BEGIN
+		Update dbo.Users Set ResetToken=@guid 
+		where login = @email_login or email = @email_login
+		And isactive = 1 and IsDisabledForLogin = 0
+
+		SELECT @email = email FROM dbo.Users 
+		where login = @email_login or email = @email_login
+		And isactive = 1 and IsDisabledForLogin = 0
+
+		insert into dbo.ForgotPasswordLog(Login,Token,IPAddress,EntyDate,IsUsed,URL,Found)
+		Select @email_login,@guid,@ipaddress,@currTime,0,@url,1
+	END
+	ELSE
+	BEGIN
+		insert into dbo.ForgotPasswordLog(Login,Token,IPAddress,EntyDate,IsUsed,URL,Found)
+		Select @email_login,@guid,@ipaddress,@currTime,0,'',0
+	END
+	
+	Select @email
+
+END
+
+
+
+
+
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE Procedure [dbo].[UpdateWorkFlow]
+@idsStr varchar(100),
+@requestId int,
+@ApproverId int,
+@currentTime datetime,
+@otherUserLoggin varchar(50)
+As 
+Begin
+	BEGIN TRANSACTION t1
+	BEGIN TRY
+		
+		-- Append in comment if A user is doing this on behalf of
+		if(@otherUserLoggin != '')
+			SET @otherUserLoggin = '---------[By '+@otherUserLoggin+' on behalf of]'
+
+
+		Declare @currUserName varchar(100)
+		-- Status to Insert while adding new Entries in workflow table
+		Declare @DefaultStatusForWF int = 1
+		DEclare @isCurrentApprover bit = 0
+
+		Declare @ids table(id int identity(1,1), approverId bigint)
+		Declare @delTbl table(id int identity(1,1), approverId bigint,wfid int)
+		Declare @insertTbl table(id int identity(1,1), approverId bigint)
+		Declare @updateTbl table(id int identity(1,1), approverId bigint,wfid int)
+
+
+
+		SELECT @currUserName = ISNULL(DesigWithName,'')
+		FROM dbo.vwApproverWithDesig WHERE ApproverID = @ApproverId
+
+		-- SET status based on if parallel approvers are allowed or not
+		Select 
+		@DefaultStatusForWF = case IsParalApprovalAllowed when 1 then 2 else 1 end,
+		@isCurrentApprover = IsParalApprovalAllowed
+
+		from [dbo].[FormCategories] fc inner join dbo.RequestMainData rm on fc.CategoryID = rm.CategoryID and rm.RequestID = @requestId
+
+
+		-- Convert data into table from comma separated string
+		insert into @ids(approverId)
+		SELECT Value FROM dbo.split1 ( @idsStr ) 
+
+		-- Find which records need to be removed
+		insert into @delTbl(approverId,wfid)
+		Select ApproverID,ID from [dbo].[ReqWorkflow] 
+		where RequestID = @requestId 
+		and ApproverID NOT IN (Select approverId from @ids)
+	
+		-- Find which IDs are neither removed/added
+		insert into @updateTbl(approverId,wfid)
+		Select u.ApproverID,u.ID from [dbo].[ReqWorkflow] u 
+		inner join @ids d on u.ApproverID = d.approverId 
+		and u.RequestID =@requestId and u.Status = 1 --(Not Assigned)
+
+
+		-- Delete which are removed OR which were neither removed/added
+		Delete from dbo.ReqWorkflow 
+		where ID in (
+			select wfid from @delTbl UNION ALL
+			select wfid from @updateTbl
+		) And Status = 1
+	
+
+		-- Find all records which should be added
+		insert into @insertTbl(approverId)
+		Select d.approverId from @ids d 
+		where d.approverId not in(
+			Select ApproverID from [dbo].[ReqWorkflow] 
+			where RequestID = @requestId )
+		order by d.id asc
+	
+		-- Add log for removed contributors
+		INSERT INTO [dbo].[ActivityLogTable](RequestId, UserId, Comments, Activity, ActivityTime)
+		Select @RequestID, @ApproverId, a.DesigWithName + ' is removed from contributors.' + @otherUserLoggin, 
+				@currUserName + ' made a change in contributors.' ,@currentTime
+		FROM  dbo.vwApproverWithDesig a INNER JOIn @delTbl d on a.ApproverID = d.approverId
+	
+
+		-- Find max approval order to be used for new entries
+		Declare @maxApprOrder int  =0 
+		Select @maxApprOrder = max(ApprovalOrder) from dbo.ReqWorkflow Where RequestID = @requestId
+
+		-- Insert entries in workflow table
+		INSERT INTO [dbo].[ReqWorkflow](RequestID, ApproverID, ApprovalOrder, Status, Remarks, EntryTime, ActionUserID,UserID,IsCurrApprover)
+		Select @requestId,  t.approverId, isnull(@maxApprOrder,0) + id, @DefaultStatusForWF,'',@currentTime, t.approverId,a.userid,@isCurrentApprover
+		from @insertTbl t INNER JOIN dbo.Approvers a on t.approverId = a.ApproverID and IsActive = 1
+		
+		-- Add log for added contributors
+		INSERT INTO [dbo].[ActivityLogTable](RequestId, UserId, Comments, Activity, ActivityTime)
+		Select @RequestID, @ApproverId, a.DesigWithName + ' is added in contributors.' + @otherUserLoggin, 
+				@currUserName + ' made a change in contributors.' ,@currentTime
+		FROM  dbo.vwApproverWithDesig a INNER JOIn @insertTbl d on a.ApproverID = d.approverId
+		AND NOT Exists(Select * from @updateTbl where approverId = d.approverId)
+
+		COMMIT TRANSACTION t1
+	END TRY
+	BEGIN CATCH
+		ROLLBACK Transaction t1
+		SELECT -1 as int
+		Return;
+	END CATCH
+
+	Select 1 as int;
+End
+
+
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE Procedure [dbo].[ValidateUser]
+	@Login varchar(50),
+	@Password varchar(50),
+	@CurrTime datetime,
+	@MachineIP varchar(20),
+	@IgnorePassword bit,
+	@LoggerLoginID varchar(50),
+	@pLoginType varchar(20)
+AS 
+BEGIN
+
+	--DECLARE @Login varchar(50) = ''
+	--DECLARE @Password varchar(50) = '123'
+	--DECLARE @CurrTime datetime = getdate()
+	--DECLARE @MachineIP varchar(20) = ''
+	--DECLARE @IgnorePassword bit = 0
+	--DECLARE @LoggerLoginID varchar(50) = ''
+
+	Declare @UserId int = 0
+	Declare @iscontributor bit =0
+	Declare @isActive bit =0
+	Declare @isDisabled bit =0
+
+	if(@IgnorePassword = 0)
+	BEGIN
+		SELECT @UserId=UserId, @iscontributor=IsContributor, @isActive = IsActive ,@isDisabled =Isnull(IsDisabledForLogin,0)
+		from dbo.Users u where (Login = @Login OR Email = @Login) and Password = @Password 
+	END
+	else
+	BEGIN	
+		SELECT @UserId=UserId, @iscontributor=IsContributor, @isActive = IsActive ,@isDisabled =Isnull(IsDisabledForLogin,0)
+		from dbo.Users u where Login = @Login OR Email = @Login 	
+	END
+	Select UserId, Login, Password, Name, Title, Email, SignatureName, StdFatherName, Section, IsContributor, IsOldCampus, CreatedBy, CreatedOn, Modifiedby, ModifiedOn, IsActive, isnull(IsDisabledForLogin,0) as IsDisabledForLogin, ResetToken 
+	from dbo.Users where UserID = @UserId
+
+	if @UserId > 0  AND @isActive = 1 AND @isDisabled = 0
+	BEGIN
+		
+		if @iscontributor = 1
+		begin
+
+			Declare @approvers table (ApproverID int,Designation varchar(50),UserID int,IsActive bit)
+			Declare @approverid int
+
+			insert into @approvers
+			Select ApproverID,Designation,UserID,1 from dbo.vwApproverWithDesig Where UserID = @UserId
+
+			select * from @approvers
+			
+			select top 1 @approverid = ApproverId from @approvers
+
+			select @approverid
+
+		end
+
+		Select distinct r.* 
+			from dbo.Roles r INNER JOIN 
+			dbo.UserRoles ur on r.ID = ur.RoleId and ur.UserId = @UserId 
+			
+			Select distinct p.*,pm.RoleId from dbo.Permissions p 
+			INNER JOIN [dbo].[PermissionsMapping] pm on p.Id = pm.PermissionId
+			INNER JOIN dbo.UserRoles ur on pm.RoleId = ur.RoleId and ur.UserId = @UserId 
+			
+	END
+		IF @LoggerLoginID != ''
+			SET @Login = @Login + '_By_' + @LoggerLoginID
+
+		INSERT INTO dbo.LoginHistory(UserID, LoginID, MachineIP, LoginTime,LoginType)
+		Select @UserId,@Login,@MachineIP,@CurrTime,@pLoginType
+
+		
+END
+
+
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE FUNCTION [dbo].[IsValidLogId]
+(
+	@RequestID int,
+	@ActivityLogID bigint,
+	@UserID int,
+	@accessType int
+)
+RETURNS bit
+AS
+BEGIN
+	
+	Declare @output bit = 0
+	Declare @approvers table (userid int)
+	Declare @creatorId int = 0
+
+	if @accessType = 1
+	begin
+		select @creatorId = UserId from dbo.RequestMainData where RequestID = @RequestID
+	end
+	if @accessType = 2
+	begin
+		insert into @approvers
+		Select distinct ApproverID from dbo.ReqWorkflow where RequestID = @RequestID
+	end
+
+	if exists(Select * from 
+			[dbo].[ActivityLogTable] a 
+			Where a.Id =@ActivityLogID
+			and (a.UserID = @UserID 
+				OR ( isnull(a.VisibleToUserID,0) = 0  AND (@UserID IN (select userid from @approvers) OR @UserID = @creatorId))
+				OR ( isnull(a.VisibleToUserID,0) = -1 AND @UserID IN (select userid from @approvers))
+				OR ( isnull(a.VisibleToUserID,0) = -2 AND @UserID = @creatorId)
+				OR ( isnull(a.VisibleToUserID,0) > 0 AND a.VisibleToUserID = @UserID)
+				)
+
+				)
+				begin
+					SET @output = 1
+				end
+
+		return @output
+END
+
+
+
+
+
+
+
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE FUNCTION [dbo].[Split1](@input AS Varchar(4000) )
+RETURNS
+      @Result TABLE(Value BIGINT)
+AS
+BEGIN
+      DECLARE @str VARCHAR(20)
+      DECLARE @ind Int
+      IF(@input is not null)
+      BEGIN
+            SET @ind = CharIndex(',',@input)
+            WHILE @ind > 0
+            BEGIN
+                  SET @str = SUBSTRING(@input,1,@ind - 1)
+                  SET @input = SUBSTRING(@input,@ind+1,LEN(@input)-@ind)
+                  INSERT INTO @Result values (@str)
+                  SET @ind = CharIndex(',',@input)
+            END
+            SET @str = @input
+            INSERT INTO @Result values (@str)
+      END
+      RETURN
+END
+
+
+
+
+
+
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+SET ANSI_PADDING ON
+GO
+CREATE TABLE [dbo].[ActivityLogConversations](
+	[ConversationID] [bigint] IDENTITY(1,1) NOT NULL,
+	[ActivityLogID] [int] NOT NULL,
+	[UserID] [int] NOT NULL,
+	[Message] [varchar](200) NOT NULL,
+	[MessageTime] [datetime] NOT NULL,
+ CONSTRAINT [PK_ActivityLogConversations] PRIMARY KEY CLUSTERED 
+(
+	[ConversationID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY]
+
+GO
+SET ANSI_PADDING OFF
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+SET ANSI_PADDING ON
+GO
+CREATE TABLE [dbo].[ActivityLogTable](
+	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[RequestId] [int] NOT NULL,
+	[UserId] [int] NOT NULL,
+	[Comments] [varchar](max) NULL,
+	[Activity] [varchar](max) NOT NULL,
+	[ActivityTime] [datetime] NOT NULL,
+	[IsPrintable] [bit] NULL,
+	[VisibleToUserID] [int] NULL,
+	[CanReplyUserID] [int] NULL,
+	[ShowActionPanel] [bit] NOT NULL,
+	[UpdatedTime] [datetime] NULL,
+ CONSTRAINT [PK_ActivityLogTable] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+
+GO
+SET ANSI_PADDING OFF
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[ApproverHierarchy](
+	[ID] [int] IDENTITY(1,1) NOT NULL,
+	[FormID] [int] NOT NULL,
+	[ApproverID] [int] NOT NULL,
+	[AltApproverID] [int] NULL,
+	[ApprovalOrder] [int] NOT NULL,
+	[IsForNewCampus] [bit] NULL,
+	[IsForOldCampus] [bit] NULL,
+ CONSTRAINT [PK_ApproverHierarchy] PRIMARY KEY CLUSTERED 
+(
+	[ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY]
+
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Approvers](
+	[ApproverID] [int] IDENTITY(1,1) NOT NULL,
+	[UserID] [int] NOT NULL,
+	[IsActive] [bit] NOT NULL,
+	[DesignationID] [int] NULL,
+ CONSTRAINT [PK_Approvers] PRIMARY KEY CLUSTERED 
+(
+	[ApproverID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY]
+
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+SET ANSI_PADDING ON
+GO
+CREATE TABLE [dbo].[Attachments](
+	[AttachmentID] [int] IDENTITY(1,1) NOT NULL,
+	[RequestID] [int] NOT NULL,
+	[AttachmentTypeID] [int] NOT NULL,
+	[UploadDate] [datetime] NOT NULL,
+	[IsActive] [int] NULL,
+	[FileName] [varchar](200) NOT NULL,
+	[Description] [varchar](500) NULL,
+ CONSTRAINT [PK_Attachments] PRIMARY KEY CLUSTERED 
+(
+	[AttachmentID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY]
+
+GO
+SET ANSI_PADDING OFF
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+SET ANSI_PADDING ON
+GO
+CREATE TABLE [dbo].[AttachmentTypes](
+	[AttachmentTypeID] [int] IDENTITY(1,1) NOT NULL,
+	[typeName] [varchar](50) NOT NULL,
+	[description] [text] NULL,
+ CONSTRAINT [PK_AttachmentTypes] PRIMARY KEY CLUSTERED 
+(
+	[AttachmentTypeID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+
+GO
+SET ANSI_PADDING OFF
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+SET ANSI_PADDING ON
+GO
+CREATE TABLE [dbo].[BonafideCertificateData](
+	[RequestID] [int] NOT NULL,
+	[CGPA] [float] NOT NULL,
+	[ChallanForm] [varchar](15) NOT NULL,
+	[PUreg] [varchar](50) NOT NULL,
+	[ID] [int] IDENTITY(1,1) NOT NULL,
+	[UpdatedTime] [datetime] NULL,
+	[ModifiedBy] [int] NULL,
+ CONSTRAINT [PK_BonafideCertificateData] PRIMARY KEY CLUSTERED 
+(
+	[ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY]
+
+GO
+SET ANSI_PADDING OFF
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+SET ANSI_PADDING ON
+GO
+CREATE TABLE [dbo].[CollegeIDCardData](
+	[RequestID] [int] NOT NULL,
+	[serialNo] [int] NULL,
+	[issueDate] [datetime] NULL,
+	[ExpiryDate] [datetime] NULL,
+	[ID] [int] IDENTITY(1,1) NOT NULL,
+	[ChallanForm] [varchar](50) NOT NULL,
+ CONSTRAINT [PK_CollegeIDCardData] PRIMARY KEY CLUSTERED 
+(
+	[ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY]
+
+GO
+SET ANSI_PADDING OFF
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+SET ANSI_PADDING ON
+GO
+CREATE TABLE [dbo].[ContactUs](
+	[ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[Name] [varchar](100) NULL,
+	[Email] [varchar](100) NULL,
+	[MachineIP] [varchar](20) NULL,
+	[Description] [varchar](500) NULL,
+	[EntryTime] [datetime] NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY]
+
+GO
+SET ANSI_PADDING OFF
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+SET ANSI_PADDING ON
+GO
+CREATE TABLE [dbo].[CourseWithdrawal](
+	[RequestID] [int] NOT NULL,
+	[CourseID] [varchar](50) NOT NULL,
+	[CourseTitle] [varchar](100) NOT NULL,
+	[CreditHours] [int] NOT NULL,
+	[ID] [int] IDENTITY(1,1) NOT NULL,
+	[TeacherName] [varchar](50) NULL,
+ CONSTRAINT [PK_CourseWithdrawal] PRIMARY KEY CLUSTERED 
+(
+	[ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY]
+
+GO
+SET ANSI_PADDING OFF
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+SET ANSI_PADDING ON
+GO
+CREATE TABLE [dbo].[Designations](
+	[DesignationID] [int] IDENTITY(1,1) NOT NULL,
+	[Designation] [varchar](50) NOT NULL,
+	[IsActive] [bit] NOT NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[DesignationID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY]
+
+GO
+SET ANSI_PADDING OFF
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+SET ANSI_PADDING ON
+GO
+CREATE TABLE [dbo].[EmailRequests](
+	[EmailRequestID] [bigint] IDENTITY(1,1) NOT NULL,
+	[Subject] [varchar](150) NOT NULL,
+	[MessageBody] [varchar](500) NOT NULL,
+	[MessageParameters] [varchar](500) NULL,
+	[EmailTo] [varchar](200) NOT NULL,
+	[EmailCC] [varchar](200) NULL,
+	[EmailBCC] [varchar](200) NULL,
+	[EmailTemplate] [varchar](50) NULL,
+	[ScheduleType] [int] NOT NULL,
+	[ScheduleTime] [datetime] NULL,
+	[EmailRequestStatus] [int] NOT NULL,
+	[EntryTime] [datetime] NULL,
+	[UniqueID] [varchar](40) NULL,
+	[RequestID] [int] NULL,
+ CONSTRAINT [PK_EmailRequests] PRIMARY KEY CLUSTERED 
+(
+	[EmailRequestID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY]
+
+GO
+SET ANSI_PADDING OFF
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+SET ANSI_PADDING ON
+GO
+CREATE TABLE [dbo].[FinalTranscriptData](
+	[RequestID] [int] NOT NULL,
+	[FYPtitle] [varchar](100) NOT NULL,
+	[PUreg] [varchar](50) NOT NULL,
+	[ID] [int] IDENTITY(1,1) NOT NULL,
+ CONSTRAINT [PK_FinalTranscriptData] PRIMARY KEY CLUSTERED 
+(
+	[ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY]
+
+GO
+SET ANSI_PADDING OFF
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+SET ANSI_PADDING ON
+GO
+CREATE TABLE [dbo].[ForgotPasswordLog](
+	[ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[Login] [varchar](100) NULL,
+	[Token] [varchar](100) NULL,
+	[IPAddress] [varchar](20) NULL,
+	[Found] [bit] NULL,
+	[URL] [varchar](100) NULL,
+	[EntyDate] [datetime] NULL,
+	[IsUsed] [bit] NULL,
+	[UpdatedOn] [datetime] NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY]
+
+GO
+SET ANSI_PADDING OFF
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+SET ANSI_PADDING ON
+GO
+CREATE TABLE [dbo].[FormCategories](
+	[CategoryID] [int] NOT NULL,
+	[Category] [varchar](100) NOT NULL,
+	[IsParalApprovalAllowed] [bit] NOT NULL,
+	[IsRecievingAllowed] [bit] NOT NULL,
+	[Instructions] [varchar](500) NULL,
+	[MaxPendingRequets] [int] NULL,
+ CONSTRAINT [PK_FormCategories] PRIMARY KEY CLUSTERED 
+(
+	[CategoryID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY]
+
+GO
+SET ANSI_PADDING OFF
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+SET ANSI_PADDING ON
+GO
+CREATE TABLE [dbo].[GmailLoginRequests](
+	[ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[Email] [varchar](100) NULL,
+	[Name] [varchar](100) NULL,
+	[Gmail_Id] [varchar](50) NULL,
+	[Gmail_Pic] [varchar](200) NULL,
+	[EntryTime] [datetime] NULL,
+	[IsUsed] [bit] NULL,
+	[UserId] [int] NULL,
+	[UserCreatedOn] [datetime] NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY]
+
+GO
+SET ANSI_PADDING OFF
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[LeaveApplicationForm](
+	[RequestID] [int] NOT NULL,
+	[startDate] [datetime] NOT NULL,
+	[endDate] [datetime] NOT NULL,
+	[ID] [int] IDENTITY(1,1) NOT NULL,
+ CONSTRAINT [PK_LeaveApplicationForm] PRIMARY KEY CLUSTERED 
+(
+	[ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY]
+
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+SET ANSI_PADDING ON
+GO
+CREATE TABLE [dbo].[LoginHistory](
+	[LoginHistoryID] [bigint] IDENTITY(1,1) NOT NULL,
+	[UserID] [int] NOT NULL,
+	[LoginID] [varchar](50) NOT NULL,
+	[MachineIP] [varchar](20) NOT NULL,
+	[LoginTime] [datetime] NOT NULL
+) ON [PRIMARY]
+SET ANSI_PADDING OFF
+ALTER TABLE [dbo].[LoginHistory] ADD [LoginType] [varchar](20) NULL
+ CONSTRAINT [PK_LoginHistory] PRIMARY KEY CLUSTERED 
+(
+	[LoginHistoryID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+
+GO
+SET ANSI_PADDING OFF
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+SET ANSI_PADDING ON
+GO
+CREATE TABLE [dbo].[OptionForBscDegree](
+	[RequestID] [int] NOT NULL,
+	[CNIC] [nchar](15) NOT NULL,
+	[dateOfBirth] [datetime] NOT NULL,
+	[PUreg] [varchar](50) NOT NULL,
+	[fatherSign] [varchar](50) NOT NULL,
+	[ID] [int] IDENTITY(1,1) NOT NULL,
+ CONSTRAINT [PK_OptionForBscDegree] PRIMARY KEY CLUSTERED 
+(
+	[ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY]
+
+GO
+SET ANSI_PADDING OFF
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+SET ANSI_PADDING ON
+GO
+CREATE TABLE [dbo].[Permissions](
+	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[Name] [varchar](50) NOT NULL,
+	[Description] [varchar](50) NOT NULL,
+	[CreatedBy] [int] NOT NULL,
+	[CreatedOn] [datetime] NOT NULL,
+	[Modifiedby] [int] NULL,
+	[ModifiedOn] [datetime] NULL,
+	[IsActive] [bit] NOT NULL,
+ CONSTRAINT [PK_Permissions] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY]
+
+GO
+SET ANSI_PADDING OFF
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[PermissionsMapping](
+	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[RoleId] [int] NOT NULL,
+	[PermissionId] [int] NOT NULL,
+ CONSTRAINT [PK_PermissionsMapping] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY]
+
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+SET ANSI_PADDING ON
+GO
+CREATE TABLE [dbo].[ReceiptOfOrignalEducationalDocuments](
+	[RequestID] [int] NOT NULL,
+	[DocumentName] [varchar](100) NOT NULL,
+	[ID] [int] IDENTITY(1,1) NOT NULL,
+ CONSTRAINT [PK_ReceiptOfOrignalEducationalDocuments] PRIMARY KEY CLUSTERED 
+(
+	[ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY]
+
+GO
+SET ANSI_PADDING OFF
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+SET ANSI_PADDING ON
+GO
+CREATE TABLE [dbo].[RequestMainData](
+	[RequestID] [int] IDENTITY(1,1) NOT NULL,
+	[CategoryID] [int] NOT NULL,
+	[UserId] [int] NOT NULL,
+	[RollNo] [varchar](20) NOT NULL,
+	[CreationDate] [datetime] NULL,
+	[TargetSemester] [int] NULL,
+	[Reason] [varchar](200) NULL,
+	[TargetDate] [date] NULL,
+	[CurrentSemester] [int] NULL,
+	[RequestStatus] [int] NOT NULL,
+	[Subject] [varchar](50) NULL,
+	[LastModifiedOn] [datetime] NULL,
+	[IsRecievingDone] [bit] NULL,
+	[CanStudentEdit] [bit] NULL
+) ON [PRIMARY]
+SET ANSI_PADDING OFF
+ALTER TABLE [dbo].[RequestMainData] ADD [RequestToken] [varchar](40) NULL
+ CONSTRAINT [PK_RequestMainData] PRIMARY KEY CLUSTERED 
+(
+	[RequestID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+
+GO
+SET ANSI_PADDING OFF
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[ReqWorkflow](
+	[ID] [int] IDENTITY(1,1) NOT NULL,
+	[RequestID] [int] NOT NULL,
+	[ApproverID] [int] NOT NULL,
+	[UserID] [int] NOT NULL,
+	[AltApproverID] [int] NULL,
+	[ApprovalOrder] [int] NOT NULL,
+	[Status] [int] NOT NULL,
+	[Remarks] [text] NULL,
+	[EntryTime] [datetime] NOT NULL,
+	[StatusTime] [datetime] NULL,
+	[ActionUserID] [int] NOT NULL,
+	[UpdateTime] [datetime] NULL,
+	[IsCurrApprover] [bit] NULL,
+ CONSTRAINT [PK_ReqWorkflow] PRIMARY KEY CLUSTERED 
+(
+	[ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+SET ANSI_PADDING ON
+GO
+CREATE TABLE [dbo].[Roles](
+	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[Name] [varchar](50) NOT NULL,
+	[Description] [varchar](50) NOT NULL,
+	[IsActive] [bit] NOT NULL,
+	[CreatedBy] [int] NOT NULL,
+	[CreatedOn] [datetime] NOT NULL,
+	[Modifiedby] [int] NULL,
+	[ModifiedOn] [datetime] NULL,
+ CONSTRAINT [PK_Roles] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY]
+
+GO
+SET ANSI_PADDING OFF
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+SET ANSI_PADDING ON
+GO
+CREATE TABLE [dbo].[SemesterAcademicTranscript](
+	[id] [int] IDENTITY(1,1) NOT NULL,
+	[RequestID] [int] NULL,
+	[ChallanNo] [varchar](50) NULL,
+ CONSTRAINT [PK_SemesterAcademicTranscript] PRIMARY KEY CLUSTERED 
+(
+	[id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY]
+
+GO
+SET ANSI_PADDING OFF
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+SET ANSI_PADDING ON
+GO
+CREATE TABLE [dbo].[SemesterRejoinData](
+	[RequestID] [int] NOT NULL,
+	[withDrawApplicationNo] [varchar](50) NOT NULL,
+	[ID] [int] IDENTITY(1,1) NOT NULL,
+ CONSTRAINT [PK_SemesterRejoinData] PRIMARY KEY CLUSTERED 
+(
+	[ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY]
+
+GO
+SET ANSI_PADDING OFF
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+SET ANSI_PADDING ON
+GO
+CREATE TABLE [dbo].[StatusTypes](
+	[StatusTypeID] [int] NOT NULL,
+	[StatusType] [varchar](20) NOT NULL,
+ CONSTRAINT [PK_StatusTypes] PRIMARY KEY CLUSTERED 
+(
+	[StatusTypeID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY]
+
+GO
+SET ANSI_PADDING OFF
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[UserRoles](
+	[UserRoleID] [int] IDENTITY(1,1) NOT NULL,
+	[UserId] [int] NOT NULL,
+	[RoleId] [int] NOT NULL,
+ CONSTRAINT [PK_UserRoles] PRIMARY KEY CLUSTERED 
+(
+	[UserRoleID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY]
+
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+SET ANSI_PADDING ON
+GO
+CREATE TABLE [dbo].[Users](
+	[UserId] [int] IDENTITY(1,1) NOT NULL,
+	[Login] [varchar](50) NOT NULL,
+	[Password] [varchar](100) NOT NULL,
+	[Name] [varchar](100) NOT NULL,
+	[Title] [varchar](100) NULL,
+	[Email] [varchar](100) NULL,
+	[SignatureName] [varchar](50) NULL,
+	[StdFatherName] [varchar](100) NULL,
+	[Section] [varchar](25) NULL,
+	[IsContributor] [bit] NULL,
+	[IsOldCampus] [bit] NOT NULL,
+	[CreatedBy] [int] NOT NULL,
+	[CreatedOn] [datetime] NOT NULL,
+	[Modifiedby] [int] NULL,
+	[ModifiedOn] [datetime] NULL,
+	[IsActive] [bit] NOT NULL,
+	[IsDisabledForLogin] [bit] NULL,
+	[ResetToken] [varchar](50) NULL,
+ CONSTRAINT [PK_Users_1] PRIMARY KEY CLUSTERED 
+(
+	[UserId] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY]
+
+GO
+SET ANSI_PADDING OFF
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+SET ANSI_PADDING ON
+GO
+CREATE TABLE [dbo].[VehicalTokenData](
+	[RequestID] [int] NOT NULL,
+	[VehicalRegNo] [varchar](50) NOT NULL,
+	[Model] [varchar](10) NOT NULL,
+	[Manufacturer] [varchar](50) NOT NULL,
+	[ownerName] [varchar](50) NOT NULL,
+ CONSTRAINT [PK_VehicalTokenData] PRIMARY KEY CLUSTERED 
+(
+	[VehicalRegNo] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY]
+
+GO
+SET ANSI_PADDING OFF
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE VIEW [dbo].[vwApproverWithDesig]
+AS
+SELECT a.ApproverID,a.UserID,u.Name,d.Designation,u.Email, d.Designation + ' (' + u.Name + ')' AS DesigWithName,u.Login 
+from dbo.Approvers a
+INNER JOIN dbo.Users u on a.UserId = u.UserId and a.IsActive = 1 and u.IsActive = 1 and u.IsContributor = 1
+INNER JOIn dbo.Designations d on a.DesignationID = d.DesignationID and d.IsActive = 1
+
+
+
+
+
+GO
+ALTER TABLE [dbo].[ActivityLogTable] ADD  CONSTRAINT [DF__ActivityL__IsPri__2739D489]  DEFAULT ((0)) FOR [IsPrintable]
+GO
+ALTER TABLE [dbo].[ActivityLogTable] ADD  DEFAULT ((0)) FOR [ShowActionPanel]
+GO
+ALTER TABLE [dbo].[Approvers] ADD  CONSTRAINT [DF_Approvers_IsActive]  DEFAULT ((1)) FOR [IsActive]
+GO
+ALTER TABLE [dbo].[Designations] ADD  CONSTRAINT [DF_ApproverDesig_IsActive]  DEFAULT ((1)) FOR [IsActive]
+GO
+ALTER TABLE [dbo].[EmailRequests] ADD  CONSTRAINT [DF__EmailRequ__Entry__656C112C]  DEFAULT (getdate()) FOR [EntryTime]
+GO
+ALTER TABLE [dbo].[FormCategories] ADD  CONSTRAINT [DF__FormCateg__IsPar__29221CFB]  DEFAULT ((0)) FOR [IsParalApprovalAllowed]
+GO
+ALTER TABLE [dbo].[FormCategories] ADD  CONSTRAINT [DF__FormCateg__IsRec__2A164134]  DEFAULT ((0)) FOR [IsRecievingAllowed]
+GO
+ALTER TABLE [dbo].[Permissions] ADD  DEFAULT ((1)) FOR [CreatedBy]
+GO
+ALTER TABLE [dbo].[Permissions] ADD  DEFAULT (getutcdate()) FOR [CreatedOn]
+GO
+ALTER TABLE [dbo].[Permissions] ADD  DEFAULT ((1)) FOR [IsActive]
+GO
+ALTER TABLE [dbo].[RequestMainData] ADD  DEFAULT ((0)) FOR [IsRecievingDone]
+GO
+ALTER TABLE [dbo].[RequestMainData] ADD  DEFAULT ((0)) FOR [CanStudentEdit]
+GO
+ALTER TABLE [dbo].[ReqWorkflow] ADD  CONSTRAINT [DF__ReqWorkfl__IsCur__4B7734FF]  DEFAULT ((0)) FOR [IsCurrApprover]
+GO
+ALTER TABLE [dbo].[Roles] ADD  DEFAULT ((1)) FOR [IsActive]
+GO
+ALTER TABLE [dbo].[Roles] ADD  DEFAULT (getdate()) FOR [CreatedOn]
+GO
+ALTER TABLE [dbo].[Users] ADD  CONSTRAINT [DF__Users__IsContrib__44CA3770]  DEFAULT ((0)) FOR [IsContributor]
+GO
+ALTER TABLE [dbo].[Users] ADD  DEFAULT ((1)) FOR [CreatedBy]
+GO
+ALTER TABLE [dbo].[Users] ADD  DEFAULT (getutcdate()) FOR [CreatedOn]
+GO
+ALTER TABLE [dbo].[Users] ADD  DEFAULT ((1)) FOR [IsActive]
+GO
+

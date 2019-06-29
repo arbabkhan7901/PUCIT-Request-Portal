@@ -1,0 +1,137 @@
+﻿@{
+    Layout = "~/Views/Shared/_MainLayout.cshtml";
+}
+@section Header
+{
+    @*<script type="text/javascript" src="@Url.Content("~/Scripts/mywebapp/Inbox/mywebapp.ui.inbox.js")"></script>*@
+    @Scripts.Render("~/bundles/inbox")
+}
+@section scripts
+{
+    <script type="text/javascript">
+        $(document).ready(function () {
+            MyWebApp.UI.Inbox.readyMain();
+        });
+    </script>
+}
+@section BreadCrumb
+{
+    <li>
+        <a href='@Url.Content("~/Home/")'>Home</a>
+    </li>
+    <li>
+        <a href='@Url.Content("~/Home/Inbox/")'>Inbox</a>
+    </li>
+}
+
+<div class="page-content">
+    <label style="display:none" id="ApplicationsType">@ViewBag.ViewId</label>
+    <label style="display:none" id="IsStudent">@ViewBag.isStudent</label>
+    <div class="row">
+        <div class="col-sm-10">
+            <div class="col-sm-2" id="rollNumberDiv" style='display:none'>
+                <label class="lbl">Roll No</label>
+                <input id="rollNumber" type="text" class="input-sm form-control">
+            </div>
+
+            <div class="col-sm-2" id="nameDiv" style='display:none'>
+                <label class="lbl">Name</label>
+                <input id="name" type="text" class="input-sm form-control">
+            </div>
+            <div class="col-sm-2">
+                <label class="lbl">Start Date</label>
+                <input id="sdate" class="input-sm form-control" type="date" data-date-format="dd-mm-yyyy">
+            </div>
+            <div class="col-sm-2">
+                <label class="lbl">End Date</label>
+                <input id="edate" class="input-sm form-control" type="date" data-date-format="dd-mm-yyyy">
+            </div>
+            <div class="col-sm-2">
+                <label class="lbl">Status </label>
+                <select id="item_select1" class="input-sm form-control">
+                    <option selected value="0">Any</option>
+                    <option value="3">Approved</option>
+                    <option value="4">Rejected</option>
+                    <option value="2" selected>Pending</option>
+                    @if (PUCIT.AIMRL.PRM.UI.Common.SessionManager.CurrentUser.AppAccessType == PUCIT.AIMRL.PRM.Entities.Enum.ApplicationAccessType.Assigned)
+                    {
+                        <option value="1">Not Assigned Yet</option>
+                        <option value="5">Rejected B4 Assignment</option>
+                    }
+                </select>
+            </div>
+            <div class="col-sm-2">
+                <label class="lbl">Type </label>
+                <select class="input-sm form-control" id="item2_select">
+                    <option value="0" selected>Any</option>
+                </select>
+            </div>
+        </div>
+        <div class="col-sm-1" style="padding-top:25px">
+            <a href="#" class="btn-new-mail">
+                <span class="btn btn-purple no-border" style="height: 30px; padding-bottom: 20px" id="search">
+                    <i class="ace-icon fa fa-search bigger-130"></i>
+                    <span>Search</span>
+                </span>
+            </a>
+        </div>
+
+    </div>
+    <div class="space"></div>
+    <div class="col_12">
+        <!-- PAGE CONTENT BEGINS -->
+        <div class="tabbable">
+            <div class="tab-content no-border no-padding">
+                <div id="inbox" class="tab-pane in active">
+                    <div class="message-container">
+                        <div id="id-message-list-navbar" class="message-navbar clearfix">
+                            <div class="message-bar">
+                                <div class="message-infobar" id="id-message-infobar">
+                                    <span class="blue bigger-150" id="ContainerTitle">Inbox <span id="spResultsFound"></span></span>
+                                    <span class="grey bigger-110" id="number"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="message-list-container">
+                            <div class="message-list" id="applications">
+                            </div>
+                        </div>
+                        <div class="message-footer clearfix">
+
+                        </div>
+                    </div>
+                </div>
+            </div><!-- /.tab-content -->
+        </div><!-- /.tab -->
+    </div>
+</div>
+
+@section PopupsAndTemplates
+{
+    <script id="inboxtemplate" type="text/x-handlebars-template">
+        {{#each ApplicationList}}
+        <a href='@Url.Content("~/Home/ApplicationView/{{ApplicationId}}")' style="text-decoration:none; color:inherit">
+            <div class="message-item">
+                <span class="time">{{EntryTimeStr}}</span>
+                <span class="text summary">
+                    {{RollNo}}
+                </span>
+                <span class="text summary">
+                    {{Subject}}
+                </span>
+                {{#ifNotEqual DiaryNo null}}
+                <span class="summary blue">{{DiaryNo}}</span>
+                {{/ifNotEqual}}
+                <span class="text {{#ifEqual StatusText 'Accepted'}}green{{/ifEqual}}
+                           {{#ifEqual StatusText 'Rejected'}}red{{/ifEqual}}
+                           {{#ifEqual StatusText 'Pending'}}orange{{/ifEqual}}
+                              {{#ifEqual StatusText 'Not Assigned'}}blue{{/ifEqual}}
+                             {{#ifEqual StatusText 'Rejected Before Assignment'}}blue{{/ifEqual}}"><b>{{StatusText}}</b></span>
+            </div>
+        </a>
+        {{/each}}
+    </script>
+}
+
+
+

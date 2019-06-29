@@ -1,0 +1,212 @@
+﻿@{
+    Layout = null;
+}
+
+<div id="labReservationForm" style="display:none">
+    <div class="row">
+        <div class="space-4"></div>
+        <div style="padding-left:50px;">
+           <div class="col-md-3">
+           </div>
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label for="form-field-username"><b>Name: </b> </label>
+                    <label id="name" for="form-field-username">@ViewBag.Name</label>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label for="form-field-first"><b>Designation: </b></label>&nbsp;
+                <label id="rollNo" class="text" for="form-field-first">@ViewBag.title</label>
+            </div>
+           
+           
+        </div>
+    </div>
+
+
+    <div class="row">
+        <div style="padding-left:50px;">
+            <div class="col-md-3">
+            </div>
+            <div class="col-md-3">
+                <div class="input-group">
+                    <label class="asterisk" for="form-field-username"><b>Course Title: </b></label>
+                    <div id="course_title"></div>
+                    <input class="input-sm form-control" id="lab_courseTitle" style="z-index:1" type="text" />
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label for="form-field-username"><b>Check Labs Availability</b></label>
+                <a class="btn btn-sm btn-primary form-control" style="height:30px" href="https://labz.pucit.edu.pk" target="_blank">Click Here</a>
+            </div>
+            <div class="space-4"></div>
+            <div class="space-4"></div>
+            <div class="col-md-3">
+            </div>
+
+        </div>
+    </div>
+
+    <div class="space-4"></div>
+    <div class="space-4"></div>
+    <div class="row">
+        <div style="padding-left:50px;">
+            <div class="col-md-3">
+            </div>
+            <div class="col-md-3">
+                <input type="radio" name="lab_type" value="per" id="permanentLab" />&nbsp;<label> <b> Permanent Lab</b></label>
+            </div>
+            <div class="col-md-3">
+                <input type="radio" name="lab_type" value="temp" id="temporaryLab" />&nbsp;<label> <b> Temporary Lab</b> </label>
+            </div>
+            <div id="select_Lab_Type"></div>
+        </div>
+    </div>
+
+    <div class="space-4"></div>
+
+
+    <div id="permanent_div" style="display:none">
+        <div class="row">
+            <div style="padding-left:50px;">
+                <div class="col-md-3">
+                </div>
+                <div class="col-md-3">
+                    <label class="asterisk" for="form-field-username"><b>Permanent Day: </b></label>
+                    <div id="per_day"></div>
+                    <div class="input-group">
+                        <input class="input-sm form-control" id="lab_perDay" type="text" placeholder="Monday" />
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <label class="asterisk" for="form-field-username"><b>Time: </b></label>
+                    <div id="from_time"></div>
+                    <div class="input-group">
+                        From: <input type="time" style="height:30px;width:120px" id="lab_from" />
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <label></label>
+                    <div class="space-4"></div>
+                    <div class="input-group">
+                        <div id="to_time"></div>
+                        to:<input type="time" style="height:30px;width:120px" id="lab_to" />
+                    </div>
+                </div>
+
+                <div class="space-4"></div>
+                <div class="space-4"></div>
+                <div class="col-md-3">
+                </div>
+                <div class="col-md-3">
+                </div>
+            </div>
+        </div>
+        <div class="space-4"></div>
+        <div class="space-4"></div>
+        <div class="space-4"></div>
+    </div>
+
+
+    <div id="temporary_div" style="display:none">
+        <div class="row">
+            <div style="padding-left:50px;">
+                <div class="col-md-3">
+                </div>
+               
+                <div class="col-md-3">
+                
+                    <label class="asterisk" for="form-field-username"><b>Date: </b></label>
+                    <div id="from_date_div"></div>
+                    <div class="input-group">
+                        from: <input class="date-picker" style="height:30px;width:120px" id="lab_dateFrom" type="text" placeholder="MM-DD-YYYY" data-date-format="mm-dd-yyyy" />
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="input-group">
+                        <label></label>
+                        <div class="space-4"></div>
+                        <div id="to_date_div"></div>
+                        to:<input class="date-picker" style="height:30px;width:120px" id="lab_dateTo" type="text" placeholder="MM-DD-YYYY" data-date-format="mm-dd-yyyy" />
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="space-4"></div>
+
+        <div class="row">
+            <div style="padding-left:50px;">
+             
+                <div class="col-md-3"></div>
+                <div class="col-md-3">
+                    <label class="asterisk" for="form-field-username"><b>Time: </b></label>
+                    <div id="tempLab_from_div"></div>
+                    <div class="input-group">
+                        from: <input style="height:30px;width:120px" id="tempLab_from" type="time" />
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="input-group">
+                        <label></label>
+                        <div class="space-4"></div>
+                        <div id="tempLab_to_div"></div>
+                        to: <input style="height:30px;width:120px" id="tempLab_to" type="time" />
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="space-4"></div>
+        <div class="space-4"></div>
+
+        <div class="space-4"></div>
+
+    </div>
+
+
+
+    <div class="row">
+        <div style="padding-left:50px;">
+            <div class="col-md-3">
+            </div>
+            <div class="col-md-3">
+                <label class="asterisk" for="form-field-username"><b>No. of Computers: </b></label>
+                <div id="no_computer"></div>
+                <div class="input-group">
+                    <input class="number input-sm form-control" id="lab_noComputer" type="number" style="z-index:1" placeholder="50" />
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <label class="asterisk" for="form-field-username"><b>Suggested Lab: </b></label>
+                <div id="suggest_lab"></div>
+                <div class="input-group">
+                    <input class="input-sm form-control" id="lab_suggestLab" type="text" style="z-index:1" placeholder="Lab A" />
+                </div>
+            </div>
+
+            <div class="space-4"></div>
+            <div class="space-4"></div>
+            <div class="col-md-3">
+            </div>
+            <div class="col-md-3">
+            </div>
+        </div>
+    </div>
+
+    <div class="space-4"></div>
+    <div class="space-4"></div>
+    <div>
+        <div class="col-md-9"></div>
+        <div class="col-md-3">
+            <div class="pull-right">
+                <i><font color="red">* </font>Indicates required fields.</i>
+            </div>
+        </div>
+    </div>
+</div>

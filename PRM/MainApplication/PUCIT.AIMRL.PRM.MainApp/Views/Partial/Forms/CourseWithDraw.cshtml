@@ -1,0 +1,150 @@
+﻿@{
+    Layout = null;
+}
+
+<div id="courseWithdraw" style="display:none">
+    <div class="row">
+        <div class="space-4"></div>
+        <div style="padding-left:50px;">
+            <div class="col-md-3">
+            </div>
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label for="form-field-username"><b>Name: </b> </label>
+                    <label id="name" for="form-field-username">@ViewBag.Name</label>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label for="form-field-first"><b>Roll No: </b></label>&nbsp;
+                <label id="rollNo" class="text" for="form-field-first">@ViewBag.RollNo</label>
+            </div>
+            <div class="col-md-3">
+            </div>
+            <div class="space-4"></div>
+            <div class="space-4"></div>
+        </div>
+    </div>
+    <div class="row">
+        <div style="padding-left:50px;">
+            <div class="col-md-3">
+            </div>
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label class="asterisk" for="form-field-username"><b>Current Semester: </b> </label>
+                    <div id="course_semester_result"></div>
+                    <select class="input-sm form-control" id="course_semester" autofocus>
+                        <option id="course_non" selected disabled>Choose one</option>
+                        <option id="one">1</option>
+                        <option id="2nd">2</option>
+                        <option id="3rd">3</option>
+                        <option id="4th">4</option>
+                        <option id="5th">5</option>
+                        <option id="6th">6</option>
+                        <option id="7th">7</option>
+                        <option id="8th">8</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label class="asterisk" for="form-field-username"><b>Section: </b> </label>
+                    <label for="form-field-username">@ViewBag.Section</label>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="space-4"></div>
+    <div class="space-4"></div>
+    <div class="row">
+        <div style="padding-left:50px;">
+            <div class="col-md-1">
+            </div>
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label class="asterisk" for="form-field-first"><u><b>Course Details: </b></u></label>
+                    <div id="course_result"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-1">
+        </div>
+        <div class="col-md-3">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Course Code</th>
+                        <th>Title</th>
+                        <th>Credit hours</th>
+                        <th>Teacher Name</th>
+
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><input type="text" id="code1" placeholder="course code" style="border:none" /></td>
+                        <td><input type="text" id="title1" placeholder="course title" style="border:none" /></td>
+                        <td><input type="text" id="cr1" placeholder="credit hours" style="border:none" /></td>
+                        <td><input type="text" id="tchr1" placeholder="teacher name" style="border:none" /></td>
+
+                    </tr>
+                    <tr>
+                        <td><input type="text" id="code2" placeholder="course code" style="border:none" /></td>
+                        <td><input type="text" id="title2" placeholder="course title" style="border:none" /></td>
+                        <td><input type="text" id="cr2" placeholder="credit hours" style="border:none" /></td>
+                        <td><input type="text" id="tchr2" placeholder="teacher name" style="border:none" /></td>
+
+                    </tr>
+                    <tr>
+                        <td><input type="text" id="code3" placeholder="course code" style="border:none" /></td>
+                        <td><input type="text" id="title3" placeholder="course title" style="border:none" /></td>
+                        <td><input type="text" id="cr3" placeholder="credit hours" style="border:none" /></td>
+                        <td><input type="text" id="tchr3" placeholder="teacher name" style="border:none" /></td>
+
+                    </tr>
+                    <tr></tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="col-md-3"></div>
+        <div class="col-md-3"></div>
+    </div>
+    <div class="row">
+        <div style="padding-left:50px;">
+            <div class="col-md-3">
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="form-field-username"><b>Reason: </b></label>
+
+                    <textarea id="with_reason" class="form-control" maxlength="200" rows="6"></textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div style="padding-left:50px;">
+            <div class="col-md-3">
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="form-field-first"><b>Note:</b></label><br />
+                    <p>Maximum 50% courses of a semester can be withdrawan.</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+            </div>
+        </div>
+    </div>
+    <div class="space-4"></div>
+    <div class="space-4"></div>
+    <div>
+        <div class="col-md-9"></div>
+        <div class="col-md-3">
+            <div class="pull-right">
+                <i><font color="red">* </font>Indicates required fields.</i>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,164 @@
+﻿@{
+    Layout = "~/Views/Shared/_HeaderLayout.cshtml";
+}
+@section Header
+{
+    @*<script type="text/javascript" src="@Url.Content("~/Scripts/mywebapp/Reports/mywebapp.ui.AppCountReport.js")"></script>*@
+    @Scripts.Render("~/bundles/AppCountReport")
+}
+@section scripts
+{
+    <script type="text/javascript">
+        $(document).ready(function () {
+            MyWebApp.UI.Reports.readyMain();
+        });
+    </script>
+}
+@section BreadCrumb
+{
+    <li>
+        <a href='@Url.Content("~/Reports/")'>Reports</a>
+    </li>
+    <li>
+        <a href='@Url.Content("~/Reports/ApplicationStatusesWRTUsers/")'>Applications Count</a>
+    </li>
+}
+
+<div class="page-content">
+    <div class="page-header">
+        <h1>Applications Count Report</h1>
+        <div class="row">
+            <div class="col-xs-12">
+                <div class="row">
+                    <div class="col-sm-12">
+                        <div class="col-sm-3">
+                            <label class="lbl">Login/Name</label>
+                            <input id="login" type="text" class="input-sm form-control" placeholder="Type Login/Name">
+                        </div>
+                        <div class="col-sm-2">
+                            <label class="lbl">Status </label>
+                            <select id="status" class="input-sm form-control">
+                                <option selected value="0">Any</option>
+                                <option value="3">Accepted</option>
+                                <option value="4">Rejected</option>
+                                <option value="2">Pending</option>
+                                <option value="1">Not Assigned Yet</option>
+                            </select>
+                        </div>
+                        <div class="col-sm-2">
+                            <label class="lbl">IsApprover </label>
+                            <select  class="input-sm form-control" id="IsApprover">
+                                <option value="0">Both</option>
+                                <option value="1">Yes</option>
+                                <option value="2">No</option>
+                            </select>
+                        </div>
+                         <div class="col-sm-2">
+                                <label class="lbl">Start Date</label>
+                                <input id="sdate" class="input-sm form-control" type="date" data-date-format="dd-mm-yyyy">
+                            </div>
+                            <div class="col-sm-2">
+                                <label class="lbl">End Date</label>
+                                <input id="edate" class="input-sm form-control" type="date" data-date-format="dd-mm-yyyy">
+                            </div>
+                        <div class="col-sm-1" style="padding-top: 15px">
+                            <a role="button" class="pull-right btn-new-mail" data-toggle="modal" id="search">
+                                <span class="btn btn-purple no-border">
+                                    <i class="menu-icon fa fa-search"></i>
+                                    <span class="bigger-110">Search</span>
+                                </span>
+                            </a>
+                        </div>
+
+                    </div>
+                </div>
+
+
+            </div>
+        </div>
+      
+    </div>
+    <!-- /.page-header -->
+    <div class="row">
+        <div class="col-xs-12">
+            <!-- PAGE CONTENT BEGINS -->
+            <div class="row">
+                <div class="col-xs-12">
+                    <div class="message-list-container">
+                        <div class="message-list" id="ApplicationsStatuses">
+                            <table id="AppStatuses_table" class="table  table-bordered table-hover"></table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- /.row -->
+            <div class="hr hr-18 dotted hr-double"></div>
+         @*   <div class="modal-footer no-margin-top">
+                <ul class="pagination pull-right no-margin">
+                    <li class="prev disabled">
+                        <a href="#">
+                            <i class="ace-icon fa fa-angle-double-left"></i>
+                        </a>
+                    </li>
+                    <li class="active">
+                        <a href="#">1</a>
+                    </li>
+                    <li>
+                        <a href="#">2</a>
+                    </li>
+                    <li>
+                        <a href="#">3</a>
+                    </li>
+                    <li class="next">
+                        <a href="#">
+                            <i class="ace-icon fa fa-angle-double-right"></i>
+                        </a>
+                    </li>
+                </ul>
+            </div>*@
+            <!-- /.modal-content -->
+        </div>
+    </div>
+    <!-- PAGE CONTENT ENDS -->
+</div>
+<!-- main.cont -->
+@section PopupsAndTemplates
+{
+    <script id="ApplicationStatusesTemplate" type="text/x-handlebars-template">
+        <thead>
+            <tr id="#">
+                <th class="center">#</th>
+                <th>Login</th>
+                <th>User Name</th>
+                <th>IsApprover</th>
+                <th>Designation</th>
+
+                <th scope="col" width="5%">All</th>
+                <th scope="col" width="5%">Pending
+                </th>
+                <th scope="col" width="5%">Accepted
+                </th>
+                <th scope="col" width="5%">Rejected
+                </th>
+                <th scope="col" width="5%">Not Assigned Yet
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            {{#each StatusList}}
+            <tr id="{{UserId}}">
+                <td class="center"></td>
+                <td>{{Login}}</td>
+                <td>{{Name}}</td>
+                <td>{{IsContributor}}</td>
+                <td>{{Title}}</td>
+                <td>{{All}}</td>
+                <td>{{Pending}}</td>
+                <td>{{Accepted}}</td>
+                <td>{{Rejected}}</td>
+                <td>{{NotAssigned}}</td>
+            </tr>
+            {{/each}}
+        </tbody>
+    </script>
+}

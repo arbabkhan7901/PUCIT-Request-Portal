@@ -1,0 +1,106 @@
+﻿@{
+    Layout = "~/Views/Shared/_MainLayout.cshtml";
+}
+@section Header
+{
+    @Scripts.Render("~/bundles/ShowActivityLog")
+}
+@section scripts
+{
+    <script type="text/javascript">
+        $(document).ready(function () {
+            MyWebApp.UI.ShowActivityLog.readyMain();
+        });
+    </script>
+}
+@section BreadCrumb
+{
+    <li>
+        <a href='@Url.Content("~/Home/")'>Home</a>
+    </li>
+    <li>
+        <a href='@Url.Content("~/Reports/ShowActivityLog/")'>Show Activity Log</a>
+    </li>
+}
+<div class="page-content">
+    <div class="page-header">
+        <h1>Activity Logs Report</h1>
+    </div>
+    <div class="row">
+        <div class="col-xs-12">
+            <!-- PAGE CONTENT BEGINS -->
+            <div class="row">
+                <div class="col-sm-10">
+                    <div class="col-sm-2">
+                        Page Size:
+                        <select id="cmbPageSizeSearch">
+                            <option value="10" selected>10</option>
+                            <option value="20">20</option>
+                            <option value="30">30</option>
+                        </select>
+
+                    </div>
+                    <div class="col-sm-2">
+                        <span id="spResultsFound"></span>
+                    </div>
+                    @* <div class="col-sm-6">
+                            <ul class="pagination pull-right no-margin"></ul>
+                        </div>*@
+                </div>
+            </div>
+            <br />
+            <div class="timeline-container">
+                <div class="timeline-label">
+                    <span class="label label-primary arrowed-in-right label-lg">
+                        <b>Activity Log</b>
+                    </span>
+                </div>
+                <div id="timeline"></div>
+            </div>
+            <!-- /.row -->
+            <div class="hr hr-18 dotted hr-double"></div>
+            <div class="modal-footer no-margin-top">
+                <ul class="pagination pull-right no-margin"></ul>
+            </div>
+            <!-- /.modal-content -->
+        </div>
+    </div>
+</div>
+
+@section PopupsAndTemplates
+{
+    <script id="LogListDisplayTemplate" type="text/x-handlebars-template">
+        {{#each LogList}}
+        <div style="display:inline-block; width:1200px;">
+            <div class="timeline-item clearfix" aid="{{Id}}">
+                <div class="timeline-info">
+                    <a class="badge badge-info" href='@Url.Content("~/Home/ApplicationView/"){{RequestId}}' style="width:75px">Acad/{{RequestId}}</a>
+                </div>
+                <div class="widget-box transparent" style="margin-left:75px">
+                    <div class="widget-header widget-header-small">
+                        <h5 class="widget-title smaller pull-left">
+                            <span class="grey"><b>{{Activity}}</b></span>
+                        </h5>
+                        <span class="widget-toolbar">
+                            <i class="ace-icon fa fa-clock-o bigger-110"></i>
+                            {{ActivityTimeStr}}
+                        </span>
+                    </div>
+                    {{#ifNotEqual Comments '' }}
+                    <div class="widget-body">
+                        <div class="widget-main" style="width: 40em;word-wrap: break-word;">
+                            {{Comments}}
+                        </div>
+                    </div>
+                    {{/ifNotEqual}}
+                </div>
+                <div class="space-4"></div>
+            </div>
+        </div>
+        
+        {{/each}}
+    </script>
+}
+
+
+

@@ -1,0 +1,151 @@
+﻿@{
+    Layout = null;
+}
+
+<div id="hardwareForm">
+    <div class="row">
+        <div class="space-4"></div>
+        <div style="padding-left:50px;">
+            <div class="col-md-3">
+            </div>
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label for="form-field-username"><b>Name: </b> </label>
+                    <label id="name" for="form-field-username">@ViewBag.Name</label>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label for="form-field-first"><b>Designation: </b></label>&nbsp;
+                <label id="rollNo" class="text" for="form-field-first">@ViewBag.title</label>
+            </div>
+            <div class="col-md-3">
+            </div>
+            <div class="space-4"></div>
+            <div class="space-4"></div>
+        </div>
+    </div>
+    <div class="row">
+        <div style="padding-left:50px;">
+            <div class="col-md-3">
+            </div>
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label class="asterisk" for="form-field-username"><b> Select Items: </b> </label>
+                    <div id="select_hardware_result"></div>
+                    <select class="input-sm form-control" id="hardware_items" autofocus>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label class="asterisk" for="form-field-username"><b>Quantity: </b></label>
+                <div id="hardware_quantity"></div>
+                <input type="text" id="Hardware_quantity" style="width:60px;height:30px;" maxlength="5" />&emsp;&emsp;&emsp;
+                <button id="addHardwareItem" style="width: 60px; height: 30px;">
+                    @*<i class="ace-icon fa fa-check"></i>*@
+                    <b>Add</b>
+                </button>
+            </div>
+            <br>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="hr hr-18 dotted hr-single">
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-sm-12" style="padding-left:30%">
+            <div class="col-sm-6">
+                <label for="form-field-first"><b> Items Selected: </b></label>
+                <div id="hardware_table_result"></div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="form-group">
+            <div class="col-sm-12 col-xs-12 col-sm-9 " style="padding-left:31%">
+                <div id="draggable" style="max-height:250px;overflow-y:auto">
+                    <table id="hardwareTable" class="sortabletable  table table-bordered">
+                        <div id="hardwaretable_result"></div>
+                        <thead class="thin-border-bottom">
+                            <tr>
+                                <th>Item Name</th>
+                                <th>Quantity</th>
+                                <th>Remove Item</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div style="padding-left:30%">
+            <div class="row">
+                <div class="col-sm-12">
+                    <div class="col-sm-6">
+                        <label for="form-field-first"><b> Reason: </b></label>
+                        <div id="hardware_reason_result"></div>
+                    </div>
+                   
+                </div>
+            </div>
+            <div id="reason_hw"></div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <input id="hwInitial" type="radio" name="choose" value="1" /><b>Initial Demand:</b>&nbsp;&nbsp; <br />
+                    <div class="row">
+                        <div style="padding-left:70px;">
+                            <div>
+                                Equipment/Hardware Items will be issued to concerned without any reason/remarks by the
+                                hardaware lab.
+                            </div>
+                        </div>
+                    </div>
+                    <input id="hwReplacement" type="radio" name="choose" value="2" /><b>Replacement Demand:</b>&nbsp;&nbsp;<br />
+                    <div class="row">
+                        <div style="padding-left:70px;">
+                            <div>
+                                Equipment/Hardware Items will be issued through Hardware Lab with full reason.
+                            </div>
+                        </div>
+                    </div>
+                    <input id="hwLoss" type="radio" name="choose" value="3" /><b>Loss-Statement Demand:</b>&nbsp;&nbsp;
+                    <div class="row">
+                        <div style="padding-left:70px;">
+                            <div>
+                                Equipment/Hardware Items will be issued to concerned without any reason/remarks by the
+                                hardaware lab
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div id="purpose_replacement" style="display:none">
+                            <label class="asterisk" for="form-field-username"><b>Specify Replacement Reason: </b></label>
+                        </div>
+                        <div id="purpose_loss" style="display:none">
+                            <label class="asterisk" for="form-field-username"><b>Specify Loss Statement: </b></label>
+                        </div>
+                        <div id="purpose_initial" style="display:none">
+                            <label class="asterisk" for="form-field-username"><b>Purpose: </b></label>
+                        </div>
+                        <div id="reason_div"></div>
+                        <textarea id="hw_reason" class="form-control" maxlength="200" rows="6" style="display:none"></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div>
+        <div class="col-md-9"></div>
+        <div class="col-md-3">
+            <div class="pull-right">
+                <i><font color="red">* </font>Indicates required fields.</i>
+            </div>
+        </div>
+    </div>
+    <br>
+</div>

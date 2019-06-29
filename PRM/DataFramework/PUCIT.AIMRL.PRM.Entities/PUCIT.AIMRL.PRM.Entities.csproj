@@ -1,0 +1,134 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{1263615F-7040-416F-96A3-631E2898DAE7}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>PUCIT.AIMRL.PRM.Entities</RootNamespace>
+    <AssemblyName>PUCIT.AIMRL.PRM.Entities</AssemblyName>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'DEVServer|AnyCPU'">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>bin\DEVServer\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DebugType>full</DebugType>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="EntityFramework, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\EntityFramework.6.1.3\lib\net40\EntityFramework.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="EntityFramework.SqlServer, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\EntityFramework.6.1.3\lib\net40\EntityFramework.SqlServer.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.ComponentModel.DataAnnotations" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="ActivityLog.cs" />
+    <Compile Include="ChangeContributors.cs" />
+    <Compile Include="CustomClasses.cs" />
+    <Compile Include="DBEntities\ApproverHierarchy.cs" />
+    <Compile Include="DBEntities\ActivityLogTable.cs" />
+    <Compile Include="DBEntities\Attachments.cs" />
+    <Compile Include="DBEntities\AttachmentTypes.cs" />
+    <Compile Include="DBEntities\BonafideCertificateData.cs" />
+    <Compile Include="DBEntities\ClearanceFormData.cs" />
+    <Compile Include="DBEntities\CollegeIDCardData.cs" />
+    <Compile Include="DBEntities\DemandForm.cs" />
+    <Compile Include="DBEntities\DemandVoucher.cs" />
+    <Compile Include="DBEntities\ForgotPasswordLog.cs" />
+    <Compile Include="DBEntities\CourseWithdrawal.cs" />
+    <Compile Include="DBEntities\CourseWithdrawData.cs" />
+    <Compile Include="DBEntities\FinalTranscriptData.cs" />
+    <Compile Include="DBEntities\HardwareForm.cs" />
+    <Compile Include="DBEntities\HardwareItems.cs" />
+    <Compile Include="DBEntities\Items.cs" />
+    <Compile Include="DBEntities\LabReservationData.cs" />
+    <Compile Include="DBEntities\LeaveApplicationForm.cs" />
+    <Compile Include="DBEntities\Login.cs" />
+    <Compile Include="DBEntities\Approvers.cs" />
+    <Compile Include="DBEntities\FormCategories.cs" />
+    <Compile Include="DBEntities\ContactUs.cs" />
+    <Compile Include="DBEntities\LoginHistory.cs" />
+    <Compile Include="DBEntities\OptionForBscDegree.cs" />
+    <Compile Include="DBEntities\paging.cs" />
+    <Compile Include="DBEntities\Permissions.cs" />
+    <Compile Include="DBEntities\Permissions1.cs" />
+    <Compile Include="DBEntities\PermissionsMapping.cs" />
+    <Compile Include="DBEntities\ReceiptOfOrignalEducationalDocuments.cs" />
+    <Compile Include="DBEntities\RequestMainData.cs" />
+    <Compile Include="DBEntities\ReqWorkflow.cs" />
+    <Compile Include="DBEntities\Roles.cs" />
+    <Compile Include="DBEntities\RoomReservation.cs" />
+    <Compile Include="DBEntities\SemesterAcademicTranscript.cs" />
+    <Compile Include="DBEntities\SemesterRejoinData.cs" />
+    <Compile Include="DBEntities\StatusTypes.cs" />
+    <Compile Include="DBEntities\StoreDemandVoucher.cs" />
+    <Compile Include="DBEntities\UserRoles.cs" />
+    <Compile Include="DBEntities\VehicalTokenData.cs" />
+    <Compile Include="Enum\Enums.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="FormData.cs" />
+    <Compile Include="EmailRequest.cs" />
+    <Compile Include="Security\PasswordEntity.cs" />
+    <Compile Include="Security\SearchEntity.cs" />
+    <Compile Include="InboxApplication.cs" />
+    <Compile Include="Samples\SampleEntity.cs" />
+    <Compile Include="Security\ContributorDTO.cs" />
+    <Compile Include="Security\SecUserDTO.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Security\StudentInboxApplication.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Common\PUCIT.AIMRL.Common\PUCIT.AIMRL.Common.csproj">
+      <Project>{70f7021a-a698-4489-a279-822d0efcbdcb}</Project>
+      <Name>PUCIT.AIMRL.Common</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="App.config" />
+    <None Include="packages.config" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

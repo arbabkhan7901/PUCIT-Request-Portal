@@ -1,0 +1,144 @@
+﻿@{
+    Layout = null;
+}
+
+<div id="receiptOfOriginal" style="display:none">
+    <div class="row">
+        <div class="space-4"></div>
+        <div style="padding-left:50px;">
+            <div class="col-md-3">
+            </div>
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label for="form-field-username"><b>Name: </b> </label>
+                    <label id="name" for="form-field-username">@ViewBag.Name</label>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label for="form-field-first"><b>Roll No: </b></label>&nbsp;
+                <label id="rollNo" class="text" for="form-field-first">@ViewBag.RollNo</label>
+            </div>
+            <div class="col-md-3">
+            </div>
+            <div class="space-4"></div>
+            <div class="space-4"></div>
+        </div>
+    </div>
+    <div class="row">
+        <div style="padding-left:50px;">
+            <div class="col-md-3">
+            </div>
+            <div class="col-md-3">
+                <label for="form-field-username"><b>Father's Name: </b></label>
+                <label for="form-field-username">@ViewBag.FatherName</label>
+            </div>
+            
+            <div class="col-md-3">
+                <label for="form-field-username"><b>Section: </b></label>
+                <label for="form-field-username">@ViewBag.Section</label>
+            </div>
+            <div class="col-md-3">
+            </div>
+        </div>
+    </div>
+    <div class="space-4"></div>
+
+    <div class="row">
+        <div style="padding-left:50px;">
+            <div class="col-md-3">
+            </div>
+            <div class="col-md-3">
+                <label class="asterisk" for="form-field-username"><b>Semester: </b></label>
+                <div id="d_semester"></div>
+                <select class="input-sm form-control" id="receiptOfOriginal_semester" autofocus>
+                    <option id="original_non" selected disabled>Choose one</option>
+                    <option id="one">1</option>
+                    <option id="2nd">2</option>
+                    <option id="3rd">3</option>
+                    <option id="4th">4</option>
+                    <option id="5th">5</option>
+                    <option id="6th">6</option>
+                    <option id="7th">7</option>
+                    <option id="8th">8</option>
+                </select>
+            </div>
+        </div>
+    </div>
+    <div class="space-4"></div>
+    <div class="space-4"></div>
+    <div class="row">
+        <div style="padding-left:50px;">
+            <div class="col-md-3">
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <p>
+                        <font color="blue"> Want to recieve following original educational documents:</font>
+                    </p>
+                    <div id="d_doc"></div>
+                    <input id="receiptOfOriginal_matric" type="checkbox" value="Matriculation Certificate">&nbsp; MatriculationCertificate<br>
+                    <input id="receiptOfOriginal_inter" type="checkbox" value="Intermediate Certificate">&nbsp;  Intermediate Certificate<br>
+                    <input id="receiptOfOriginal_bs" type="checkbox" value="BSc Certifcate" />&nbsp; BSc Certificate<br>
+                </div>
+            </div>
+            <div class="col-md-3">
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div style="padding-left:50px;">
+            <div class="col-md-3">
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="form-field-username"><b>Reason: </b></label>
+                    <textarea id="receiptOfOriginal_reason" class="form-control" maxlength="200" rows="6"></textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="space-4"></div>
+    <div class="space-4"></div>
+    <div class="row">
+        <div style="padding-left:50px;">
+            <div class="col-md-3">
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    
+                    <ul>
+                        <li>
+                            <label class="asterisk" for="form-field-username"><b>College ID Card:  (.jpg, .gif, .png)</b></label>
+                            <div id="d_collegeIdCard_attach"></div>
+                            <div class="space-4"></div>
+                            <input type="file" id="collegeIdCard_attach" />
+                            <div class="space-4"></div>
+                        </li>
+                        <li>
+                            <label>Have you done your Clearance Manually?: <input type="checkbox" id="clearance_check" /></label>
+                        <div style="display:none" id="attach_clearance">
+                            <label class="asterisk" for="form-field-username"><b>Clearnace Form:  (.jpg, .gif, .png)</b></label>
+                            <div id="d_clearanceForm_attach"></div>
+                            <div class="space-4"></div>
+                            <input type="file" id="clearanceForm_attach" />
+                            <div class="space-4"></div>
+                        </div>
+                        </li>
+                        
+                    </ul>
+                </div>
+            </div>
+            <div class="col-md-3">
+            </div>
+
+        </div>
+    </div>
+    <div>
+        <div class="col-md-9"></div>
+        <div class="col-md-3">
+            <div class="pull-right">
+                <i><font color="red">* </font>Indicates required fields.</i>
+            </div>
+        </div>
+    </div>
+</div>

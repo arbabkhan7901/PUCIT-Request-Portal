@@ -1,0 +1,458 @@
+GO
+alter table [dbo].[CourseWithdrawal]
+add TeacherName varchar(50)
+gO
+
+
+create table dbo.ContactUs
+(
+ID bigint primary key identity(1,1),
+Name varchar(100),
+Email varchar(100),
+MachineIP varchar(20),
+Description varchar(500),
+EntryTime datetime 
+)
+
+GO
+
+CREATE procedure dbo.SaveContactUs
+	@ID bigint,
+	@Name varchar(100),
+	@Email varchar(100),
+	@MachineIP varchar(20),
+	@Description varchar(500),
+	@CreationDate datetime
+AS
+Begin
+
+	Insert into dbo.ContactUs(Name,Email,MachineIP, Description,EntryTime)
+	Select @Name,@Email,@MachineIP,@Description,@CreationDate
+
+End
+
+
+GO
+
+
+
+CREATE PROCEDURE [dbo].SearchContactUs
+	@Name varchar(100),
+	@Email varchar(100),
+	@startDate date,
+	@endDate date,
+	@pageSize int,
+	@pageIndex int
+AS
+	BEGIN
+		Select count(*) 
+		from dbo.ContactUs rmd
+		where (rmd.Name like '%'+@Name + '%'
+			  and rmd.Email like '%'+ @Email + '%'
+			  and (cast(rmd.EntryTime as date) Between @startDate and @endDate) )
+			
+
+	Select ID,Name,Email,Description,EntryTime,MachineIP 
+		from dbo.ContactUs rmd
+		where (rmd.Name like '%'+@Name + '%'
+			  and rmd.Email like '%'+ @Email + '%'
+			  and (cast(rmd.EntryTime as date) Between @startDate and @endDate))
+		 Order by rmd.ID	  
+		OFFSET @pageIndex*@pageSize ROWS
+		FETCH NEXT @pageSize ROWS ONLY
+END
+
+Go
+
+ALTER procedure [dbo].[SaveContactUs]
+	@ID bigint,
+	@Name varchar(100),
+	@Email varchar(100),
+	@MachineIP varchar(20),
+	@Description varchar(500),
+	@CreationDate datetime
+AS
+Begin
+	Declare @return bigint=1
+	Insert into dbo.ContactUs(Name,Email,MachineIP, Description,EntryTime)
+	values( @Name,@Email,@MachineIP,@Description,@CreationDate)
+	select @return
+End
+GO
+
+
+-----04July18 Changes
+
+ALTER Procedure [dbo].[GetApproversByRequestId]
+@requestId int
+As 
+Begin
+	--Declare @requestId int
+	--Set @requestId = 18
+
+	Select rwf.ID as WFID, a.ApproverID , a.Login, a.Name, a.Designation, a.Email, rwf.Status as WorkFlowStatus
+	from [dbo].[ReqWorkflow] rwf 
+	INNER JOIN dbo.vwApproverWithDesig a on rwf.ApproverID = a.ApproverID
+	Where rwf.RequestID = @requestId
+	Order by rwf.ApprovalOrder 
+End
+
+
+GO
+
+/****** Object:  UserDefinedTableType [dbo].[ArrayInt2]    Script Date: 7/5/2018 10:32:26 PM ******/
+CREATE TYPE [dbo].[ArrayInt3] AS TABLE(
+	[ID1] [int] NULL,
+	[ID2] [int] NULL,
+	[ID3] [int] NULL
+)
+GO
+
+
+
+
+CREATE Procedure [dbo].[AddContributor]
+	@RequestID int,
+	@ApproverIDToAdd int,
+	@currentTime datetime,
+	@CurrentApproverID int,
+	@otherUserLogin varchar(50)
+As 
+Begin
+		
+		Declare @wfid int = 0
+
+		-- Append in comment if A user is doing this on behalf of
+		if(@otherUserLogin != '')
+			SET @otherUserLogin = '---------[By '+@otherUserLogin+' on behalf of]'
+
+
+		-- Status to Insert while adding new Entries in workflow table
+		Declare @DefaultStatusForWF int = 1
+		DEclare @isCurrentApprover bit = 0
+		-- SET status based on if parallel approvers are allowed or not
+		Select 
+			@DefaultStatusForWF = case IsParalApprovalAllowed when 1 then 2 else 1 end,
+			@isCurrentApprover = IsParalApprovalAllowed
+		from [dbo].[FormCategories] fc inner join dbo.RequestMainData rm on fc.CategoryID = rm.CategoryID and rm.RequestID = @requestId
+
+		
+	   -- Find max approval order to be used for new entries
+		Declare @maxApprOrder int  =0 
+		Select @maxApprOrder = max(ApprovalOrder) from dbo.ReqWorkflow Where RequestID = @requestId
+
+
+		-- Insert entry in workflow table
+		INSERT INTO [dbo].[ReqWorkflow](RequestID, ApproverID, ApprovalOrder, Status, Remarks, EntryTime, ActionUserID,UserID,IsCurrApprover)
+		Select @requestId,  t.approverId, isnull(@maxApprOrder,0) + 1, @DefaultStatusForWF,'',@currentTime, t.approverId,t.userid,@isCurrentApprover
+		from  dbo.Approvers t Where t.ApproverID = @ApproverIDToAdd AND IsActive = 1
+		
+		select @wfid = scope_identity()
+
+		/* Activity Log Changes */
+
+		Declare @currUserName varchar(100)
+		SELECT @currUserName = ISNULL(DesigWithName,'')
+		FROM dbo.vwApproverWithDesig WHERE ApproverID = @CurrentApproverID
+
+		Declare @TagetUserName varchar(100)
+		SELECT @TagetUserName = ISNULL(DesigWithName,'')
+		FROM dbo.vwApproverWithDesig WHERE ApproverID = @ApproverIDToAdd
+
+		-- Add log for added contributors
+		INSERT INTO [dbo].[ActivityLogTable](RequestId, UserId, Comments, Activity, ActivityTime)
+		Select @RequestID, @CurrentApproverID, @TagetUserName + ' is added in contributors.' + @otherUserLogin, 
+				@currUserName + ' made a change in contributors.' ,@currentTime
+					  
+		select cast(@wfid as int)
+End
+
+GO
+
+
+
+
+CREATE Procedure [dbo].[RemoveContributor]
+	@RequestID int,
+	@WfID int,
+	@ApproverIDToRemove int,
+	@currentTime datetime,
+	@CurrentApproverID int,
+	@otherUserLogin varchar(50)
+As 
+Begin
+	
+	-- Append in comment if A user is doing this on behalf of
+		if(@otherUserLogin != '')
+			SET @otherUserLogin = '---------[By '+@otherUserLogin+' on behalf of]'
+
+	   Delete from dbo.ReqWorkflow Where ID = @WfID And RequestID = @RequestID And ApproverID = @ApproverIDToRemove
+
+		/* Activity Log Changes */
+
+		Declare @currUserName varchar(100)
+		SELECT @currUserName = ISNULL(DesigWithName,'')
+		FROM dbo.vwApproverWithDesig WHERE ApproverID = @CurrentApproverID
+
+		Declare @TagetUserName varchar(100)
+		SELECT @TagetUserName = ISNULL(DesigWithName,'')
+		FROM dbo.vwApproverWithDesig WHERE ApproverID = @ApproverIDToRemove
+
+		-- Add log for removed contributors
+		INSERT INTO [dbo].[ActivityLogTable](RequestId, UserId, Comments, Activity, ActivityTime)
+		Select @RequestID, @CurrentApproverID, @TagetUserName + ' is removed from contributors.' + @otherUserLogin, 
+				@currUserName + ' made a change in contributors.' ,@currentTime
+
+	  
+		select cast(1 as int)
+End
+
+GO
+
+
+
+CREATE Procedure [dbo].[UpdateContributorsOrder]
+	@RequestID int,
+	@Approvers ArrayInt3 READONLY,
+	@currentTime datetime,
+	@CurrentApproverID int,
+	@otherUserLogin varchar(50)
+As 
+Begin
+		 -- Find max approval order to be used for new entries
+		Declare @maxApprOrder int  =0 
+		Select @maxApprOrder = max(ApprovalOrder) 
+		FROM dbo.ReqWorkflow Where RequestID = @requestId And Status != 1
+
+		DECLARE @oldWorkFlowOrder VARCHAR(MAX)
+		SELECT @oldWorkFlowOrder = COALESCE(@oldWorkFlowOrder + '=> ', '') + DesigWithName
+		FROM [dbo].[ReqWorkflow] r INNER JOIN dbo.vwApproverWithDesig a on r.ApproverID = a.ApproverID
+		Where r.RequestID = @RequestID
+		Order by r.ApprovalOrder
+		
+
+		-- Update Approval Orders
+		Update r SET r.ApprovalOrder = a.ID3 + @maxApprOrder 
+		From [dbo].[ReqWorkflow] r INNER JOIN @Approvers a 
+		ON  r.ID = a.ID1  -- WFID 
+		AND r.ApproverID = a.ID2 -- ApproverID
+		AND r.Status = 1 -- Pending
+
+
+		-- Append in comment if A user is doing this on behalf of
+		if(@otherUserLogin != '')
+			SET @otherUserLogin = '---------[By '+@otherUserLogin+' on behalf of]'
+
+		
+		/* Activity Log Changes */
+		Declare @currUserName varchar(100)
+		SELECT @currUserName = ISNULL(DesigWithName,'')
+		FROM dbo.vwApproverWithDesig WHERE ApproverID = @CurrentApproverID
+
+
+		-- Add log for added contributors
+		INSERT INTO [dbo].[ActivityLogTable](RequestId, UserId, Comments, Activity, ActivityTime)
+		Select @RequestID, @CurrentApproverID, 'Approvers Order is changed in workflow.' + @otherUserLogin + ' Earlier It was: ' + @oldWorkFlowOrder, 
+				@currUserName + ' made a change in contributors.' ,@currentTime
+					  
+		select cast(1 as int)
+End
+
+GO
+
+
+ALTER Procedure [dbo].[ValidateUser]
+	@Login varchar(50),
+	@Password varchar(50),
+	@CurrTime datetime,
+	@MachineIP varchar(20),
+	@IgnorePassword bit,
+	@LoggerLoginID varchar(50),
+	@Email varchar(50)
+AS 
+BEGIN
+
+	--DECLARE @Login varchar(50) = ''
+	--DECLARE @Password varchar(50) = '123'
+	--DECLARE @CurrTime datetime = getdate()
+	--DECLARE @MachineIP varchar(20) = ''
+	--DECLARE @IgnorePassword bit = 0
+	--DECLARE @LoggerLoginID varchar(50) = ''
+
+	Declare @UserId int = 0
+	Declare @iscontributor bit =0
+	Declare @isActive bit =0
+	Declare @isDisabled bit =0
+
+	if(@IgnorePassword = 0)
+	BEGIN
+		SELECT @UserId=UserId, @iscontributor=IsContributor, @isActive = IsActive ,@isDisabled =Isnull(IsDisabledForLogin,0)
+		from dbo.Users u where (Login = @Login OR Email = @Login) and Password = @Password 
+	END
+	else
+	BEGIN	
+		SELECT @UserId=UserId, @iscontributor=IsContributor, @isActive = IsActive ,@isDisabled =Isnull(IsDisabledForLogin,0)
+		from dbo.Users u where Login = @Login OR Email=@Email  	
+	END
+	Select UserId, Login, Password, Name, Title, Email, SignatureName, StdFatherName, Section, IsContributor, IsOldCampus, CreatedBy, CreatedOn, Modifiedby, ModifiedOn, IsActive, isnull(IsDisabledForLogin,0) as IsDisabledForLogin, ResetToken 
+	from dbo.Users where UserID = @UserId
+
+	if @UserId > 0  AND @isActive = 1 AND @isDisabled = 0
+	BEGIN
+		
+		if @iscontributor = 1
+		begin
+
+			Declare @approvers table (ApproverID int,Designation varchar(50),UserID int,IsActive bit)
+			Declare @approverid int
+
+			insert into @approvers
+			Select ApproverID,Designation,UserID,1 from dbo.vwApproverWithDesig Where UserID = @UserId
+
+			select * from @approvers
+			
+			select top 1 @approverid = ApproverId from @approvers
+
+			select @approverid
+
+		end
+
+		Select distinct r.* 
+			from dbo.Roles r INNER JOIN 
+			dbo.UserRoles ur on r.ID = ur.RoleId and ur.UserId = @UserId 
+			
+			Select distinct p.*,pm.RoleId from dbo.Permissions p 
+			INNER JOIN [dbo].[PermissionsMapping] pm on p.Id = pm.PermissionId
+			INNER JOIN dbo.UserRoles ur on pm.RoleId = ur.RoleId and ur.UserId = @UserId 
+			
+	END
+		IF @LoggerLoginID != ''
+			SET @Login = @Login + '_By_' + @LoggerLoginID
+
+		INSERT INTO dbo.LoginHistory(UserID, LoginID, MachineIP, LoginTime)
+		Select @UserId,@Login,@MachineIP,@CurrTime
+END
+
+
+GO
+
+CREATE Table dbo.ForgotPasswordLog
+(
+ID bigint identity(1,1) primary key,
+Login varchar(100),
+Token varchar(100),
+IPAddress varchar(20),
+Found bit,
+URL varchar(100),
+EntyDate Datetime,
+IsUsed bit,
+UpdatedOn datetime
+)
+
+
+GO
+
+ALTER PROCEDURE [dbo].[UpdateResetPasswordToken]
+	@email_login varchar(50),
+	@guid varchar(50),
+	@ipaddress varchar(20),
+	@currTime datetime,
+	@url varchar(100)
+AS
+BEGIN
+	Declare @email varchar(50) = ''
+	
+
+	IF( Select count(*) FROM dbo.Users where login = @email_login or email = @email_login
+		And isactive = 1 and IsDisabledForLogin = 0) = 1
+	BEGIN
+		Update dbo.Users Set ResetToken=@guid 
+		where login = @email_login or email = @email_login
+		And isactive = 1 and IsDisabledForLogin = 0
+
+		SELECT @email = email FROM dbo.Users 
+		where login = @email_login or email = @email_login
+		And isactive = 1 and IsDisabledForLogin = 0
+
+		insert into dbo.ForgotPasswordLog(Login,Token,IPAddress,EntyDate,IsUsed,URL,Found)
+		Select @email_login,@guid,@ipaddress,@currTime,0,@url,1
+	END
+	ELSE
+	BEGIN
+		insert into dbo.ForgotPasswordLog(Login,Token,IPAddress,EntyDate,IsUsed,URL,Found)
+		Select @email_login,@guid,@ipaddress,@currTime,0,'',0
+	END
+	
+	Select @email
+
+END
+
+
+
+GO
+
+
+ALTER Procedure [dbo].[UpdatePassword]
+@Token_Login varchar(50),
+@CurrPassword varchar(50),
+@NewPassword varchar(50),
+@CurrTime datetime,
+@ModifiedBy int,
+@IsChangePassword bit
+AS
+BEGIN
+	
+	IF @IsChangePassword = 1 -- Change Password
+	BEGIN
+		IF  (SELECT count(*) FrOM dbo.Users
+			Where Login =@Token_Login AND Password = @CurrPassword and IsActive = 1 and IsDisabledForLogin =0) = 1
+		BEGIN
+			Update dbo.Users set Password = @NewPassword, ModifiedBy =@ModifiedBy, ModifiedOn = @CurrTime 
+			Where Login =@Token_Login AND Password = @CurrPassword and IsActive = 1 and IsDisabledForLogin =0
+			Select cast(1 as bit)
+			RETURN;
+		END
+	END
+	ELSE  -- RESET Password
+	BEGIN
+		IF (Select count(*) from dbo.users Where ResetToken =@Token_Login  and IsActive = 1) = 1
+		BEGIN
+			Update dbo.Users set Password = @NewPassword, ModifiedBy =@ModifiedBy, ModifiedOn = @CurrTime, ResetToken=null 
+			Where ResetToken =@Token_Login  and IsActive = 1
+
+			Update dbo.ForgotPasswordLog SET IsUsed = 1,UpdatedOn = @CurrTime Where Token = @Token_Login
+
+			Select cast(1 as bit)
+			RETURN;
+		END
+	END
+
+	Select cast(0 as bit)
+
+END
+
+
+GO
+
+CREATE PROCEDURE [dbo].[SearchForgotPasswordLog]
+	@Login varchar(100),
+	@startDate date,
+	@endDate date,
+	@pageSize int,
+	@pageIndex int
+AS
+	BEGIN
+		Select count(*) 
+		from dbo.ForgotPasswordLog rmd
+		where (rmd.Login like '%'+@Login + '%'
+			  and (cast(rmd.EntyDate as date) Between @startDate and @endDate) )
+			
+
+	Select ID, Login, Token, IPAddress as MachineIP, Found, URL, EntyDate, IsUsed
+		from dbo.ForgotPasswordLog rmd
+		where (rmd.Login like '%'+@Login + '%'
+			  and (cast(rmd.EntyDate as date) Between @startDate and @endDate) )
+		 Order by rmd.ID DESC	  
+		OFFSET @pageIndex*@pageSize ROWS
+		FETCH NEXT @pageSize ROWS ONLY
+END

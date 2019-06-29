@@ -1,0 +1,247 @@
+@{
+    Layout = "~/Views/Shared/_MainLayout.cshtml";
+}
+@section Header
+{
+    @Scripts.Render("~/bundles/mywebapp.ui.forms")
+    @*<script type="text/javascript" src="@Url.Content("~/Scripts/mywebapp/Forms/mywebapp.ui.forms.js")?s=@DateTime.UtcNow.Ticks"></script>
+        <link rel="stylesheet" href="~/Content/jquery-ui.min.css" />*@
+
+}
+@section scripts
+{
+    <script type="text/javascript">
+
+        $(document).ready(function () {
+            MyWebApp.UI.Forms.readyMain();
+        });
+    </script>
+}
+@section BreadCrumb
+{
+    <li>
+        <a href='@Url.Content("~/Home/")'>Home</a>
+    </li>
+    <li>
+        <a href='@Url.Content("~/Home/Forms/")'>New Application </a>
+    </li>
+}
+
+<div class="page-content">
+    <div class="row">
+        <div class="col-xs-6 col-md-4">
+            <h1>
+                New Application
+                <small>
+                    <i class="ace-icon fa fa-angle-double-right"></i>
+                    Select a form
+                </small>
+            </h1>
+        </div>
+
+        <div class="col-xs-6 col-md-4">
+            <select class="form-control" id="item_select" style="width:400px ; margin-top:25px" autofocus>
+                <option id="non" value="0" selected disabled>Choose one</option>
+            </select>
+        </div>
+        <div class="col-xs-6 col-md-4"></div>
+    </div>
+    <div class="hr hr-18 dotted hr-double"></div>
+    <div class="col-md-8"></div>
+    <div class="row">
+        <div class="col-xs-12">
+            <div class="col-md-2"></div>
+            <div class="col-md-8">
+                <div class="widget-box" id="widget_box_main" style="display:none">
+                    <div class="widget-header">
+                        <h4 class="widget-title" id="formTitle"></h4>
+                        <span class="widget-toolbar" id="close">
+                            <a href="#">
+                                <i class="ace-icon fa fa-times"></i>
+                            </a>
+                        </span>
+                    </div>
+                    <div class="widget-body" id="widget_box_body" style="display:none">
+                        <div class="widget-main">
+                            <!--Clearance Form Div-->
+                            @Html.Partial("~/Views/Partial/Forms/ClearanceForm.cshtml")
+
+                            <!--Leave Form Div-->
+                            @Html.Partial("~/Views/Partial/Forms/LeaveForm.cshtml")
+
+                            <!--Option for bsc Form Div-->
+                            @Html.Partial("~/Views/Partial/Forms/OptionForBscForm.cshtml")
+
+                            <!--Final Acadamic Form Div-->
+                            @Html.Partial("~/Views/Partial/Forms/FinalAcademicForm.cshtml")
+
+                            <!-- College ID card Form Div-->
+                            @Html.Partial("~/Views/Partial/Forms/CollegeIDForm.cshtml")
+
+                            <!--Receipt of orignal documents Form Div-->
+                            @Html.Partial("~/Views/Partial/Forms/ReceiptOfOriginalForm.cshtml")
+
+                            <!--Bonafide form Div-->
+                            @Html.Partial("~/Views/Partial/Forms/BonafideForm.cshtml")
+
+                            <!--Vehical Token form Div-->
+                            @Html.Partial("~/Views/Partial/Forms/VehicalTokenForm.cshtml")
+
+                            <!--Semester withdraw/freeze form Div-->
+                            @Html.Partial("~/Views/Partial/Forms/SemesterFreezeForm.cshtml")
+
+                            <!--Semester Rejoin form Div-->
+                            @Html.Partial("~/Views/Partial/Forms/SemesterRejoinForm.cshtml")
+
+                            <!--Semester Acadamic form Div-->
+                            @Html.Partial("~/Views/Partial/Forms/SemesterAcademicForm.cshtml")
+
+                            <!--Course withdraw-->
+                            @Html.Partial("~/Views/Partial/Forms/CourseWithDraw.cshtml")
+
+                            <!--GENERAL REQUEST FORM-->
+                            @Html.Partial("~/Views/Partial/Forms/GeneralRequestForm.cshtml")
+
+                            <!--ITEM DEMAND REQUISITION FORM-->
+                            @Html.Partial("~/Views/Partial/Forms/ItemDemandForm.cshtml")
+
+                            <!--HARDWARE REQUEST FORM-->
+                            @Html.Partial("~/Views/Partial/Forms/HardwareRequestForm.cshtml")
+
+                            <!--DEMAND VOUCHER FORM-->
+                            @Html.Partial("~/Views/Partial/Forms/DemandVoucherForm.cshtml")
+
+                            <!--STORE DEMAND VOUCHER FORM-->
+                            @Html.Partial("~/Views/Partial/Forms/StoreDemandVoucher.cshtml")
+
+                            <!-- LAB RESERVATION FORM -->
+                            @Html.Partial("~/Views/Partial/Forms/LabReservationForm.cshtml")
+                          
+                            <!--ROOM RESERVATION FORM-->
+                            @Html.Partial("~/Views/Partial/Forms/RoomReservation.cshtml")
+                        </div>
+                    </div>
+
+                    <div id="widget_footer" class="form-actions center" style="display:none">
+                        <button id="cancel" class="btn btn-sm">
+                            <i class="ace-icon fa fa-times"></i>
+                            Cancel
+                        </button>
+
+                        <button id="savedata" class="btn btn-sm btn-primary">
+                            <i class="ace-icon fa fa-check"></i>
+                            Send
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section PopupsAndTemplates
+{
+    <!--Modal POP-up-->
+    <div id="Note" class="modal" data-backdrop="static" data-keyboard="false">
+        <div class="modal-dialog" style="width:400px">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="blue bigger" id="title_formCategory"></h4>
+                </div>
+                <div class="modal-body" style="width:400px">
+                    <div class="row">
+                        <div class="col-xs-12">
+                            <div id="instruction"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-sm" data-dismiss="modal" id="cancel_instruction" name="Cancel">
+                        <i class="ace-icon fa fa-times"></i>
+                        Cancel
+                    </button>
+
+                    <button class="btn btn-sm btn-primary" name="Continue" id="Continue">
+                        <i class="ace-icon fa fa-check"></i>
+                        Continue
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="SaveAlert" class="modal in" tabindex="-1" data-backdrop="static" data-keyboard="false">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" id="AlertModalClose" data-dismiss="modal">x</button>
+                    <h4 class="blue bigger">Alert</h4>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-xs-8">
+                            <p>Do you want to continue?</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-sm" data-dismiss="modal" id="cancel_instruction" name="save_no">
+                        <i class="ace-icon fa fa-times"></i>
+                        No
+                    </button>
+
+                    <button class="btn btn-sm btn-primary" id="save_yes">
+                        <i class="ace-icon fa fa-check"></i>
+                        Yes
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="SuccessMsg" class="modal in" tabindex="-1" data-backdrop="static" data-keyboard="false">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" id="SuccessMsgClose" data-dismiss="modal">x</button>
+                    <h4 class="blue bigger">Success</h4>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-xs-12">
+                            <p>Your application has been sent successfully to the Approver. Process will take 2-3 working days. Thank you!  </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-sm btn-primary" id="viewApplication">
+                        View Application
+                    </button>
+                    <button class="btn btn-sm btn-primary" id="ViewInbox">
+                        View Inbox
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        $('.date-picker12').datepicker({
+            datepicker: true,
+            autoclose: true,
+            todayHighlight: true,
+            changeMonth: true,
+            changeYear: true,
+            dateFormat: 'mm-dd-yy',
+            startDate: '01-01-80',
+            endDate: '01-01-00'
+        });
+
+        $('.date-picker').datepicker({
+            datepicker: true,
+            autoclose: true,
+            todayHighlight: true,
+            changeMonth: true,
+            changeYear: true,
+            dateFormat: 'mm-dd-yy'
+        });
+    </script>
+
+}

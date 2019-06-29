@@ -1,0 +1,82 @@
+﻿@{ 
+    Layout = null;
+
+}
+<!--ITEM DEMAND -->
+<div id="demand_request" style="display:none">
+    <div class="row">
+        <div class="col-xs-12 col-sm-7" style="padding-left:10%">
+            <div>
+                <span class="blue"><label><b>Diary No. :</b></label></span>
+                <label id="DiaryNo14"></label>
+            </div>
+            <div class="space-4"></div>
+            <div>
+                <span class="blue"><label><b>Designation:</b></label></span>
+                <label id="rollno14"></label>
+            </div>
+        </div>
+
+        <div class="col-xs-12 col-sm-5">
+            <div>
+                <span class="blue"><label><b>Date:</b></label></span>
+                <label id="mydate14"></label>
+            </div>
+            <div class="space-4"></div>
+            <div>
+                <span class="blue"><label><b>Name :</b></label></span>
+                <label id="myname14"></label>
+            </div>
+        </div>
+    </div>
+    <div class="space-4"></div>
+    <div class="row">
+        <div class="col-xs-12" style="padding-left:10%">
+            <div class="space-4"></div>
+            <div id="ItemData" style="display:none">
+                <table class="table table-bordered" style="width:350px">
+                    <thead class="thin-border-bottom">
+                        <tr>
+                            <th>
+                                Item Name
+                            </th>
+                            <th>
+                                Quantity
+                            </th>
+                            @if ((Model.AppStatus == 2 && PUCIT.AIMRL.PRM.UI.Common.SessionManager.CurrentUser.AppAccessType == PUCIT.AIMRL.PRM.Entities.Enum.ApplicationAccessType.Assigned) || (Model.AppStatus == 3 && PUCIT.AIMRL.PRM.UI.Common.SessionManager.CurrentUser.AppAccessType == PUCIT.AIMRL.PRM.Entities.Enum.ApplicationAccessType.SelfCreated) || (Model.AppStatus == 3 && PUCIT.AIMRL.PRM.UI.Common.SessionManager.CurrentUser.AppAccessType == PUCIT.AIMRL.PRM.Entities.Enum.ApplicationAccessType.Assigned))
+                            {
+                                <th>
+                                    Issue Quantity
+                                </th>
+                            }
+                        </tr>
+                    </thead>
+                    <tbody id="ItemTable"></tbody>
+                </table>
+            </div>
+
+            <div id="ItemDataForAccepted" style="display:none">
+                <table class="table table-bordered " style="width:500px">
+                    <thead class="thin-border-bottom">
+                        <tr>
+                            <th>
+                                Item Name
+                            </th>
+                            <th>
+                                Quantity Demanded
+                            </th>
+                            <th>
+                                Quantity Issued
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody id="ItemTableForAccepted"></tbody>
+                </table>
+            </div>
+
+        </div>
+
+
+    </div>
+
+</div>

@@ -1,0 +1,217 @@
+﻿@{
+    ViewBag.Title = "Index";
+}
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+@section Header
+{
+    <script type="text/javascript" src="@Url.Content("~/Scripts/mywebapp/Security/mywebapp.ui.googleusers.js")?s=@DateTime.UtcNow.Ticks"></script>
+    @*@Scripts.Render("~/bundles/users")*@
+}
+<style type="text/css">
+    .currentpage {
+        display: block;
+    }
+
+    .page {
+        display: none;
+    }
+
+    .navlinks a {
+        margin: 5px;
+    }
+
+    .selectedpg {
+        color: red;
+        background-color: grey;
+        padding: 5px;
+    }
+</style>
+
+@section scripts
+{
+    <script type="text/javascript">
+
+        $(document).ready(function () {
+            MyWebApp.UI.GoogleUsers.readyMain();
+        });
+    </script>
+}
+@section BreadCrumb
+{
+    <li>
+        <a href='@Url.Content("~/Security/")'>Security</a>
+    </li>
+    <li>
+        <a href='@Url.Content("~/Security/GoogleUsers/")'>Users</a>
+    </li>
+}
+
+<div class="page-content">
+    <div class="page-header">
+        <div class="main-content">
+            <div class="row">
+                <div class="col-sm-12">
+                    <div class="col-sm-3">
+                        <label class="lbl">Name/Email</label>
+                        <input id="txtTextToSearch" type="text" class="input-sm form-control" placeholder="Type Name/Login/Email/Section">
+                    </div>
+                    <div class="col-sm-2">
+                        <label class="lbl">User Created? </label>
+                        <select id="cmbIsActiveSearch" class="input-sm form-control">
+                            <option value="-1">Any</option>
+                            <option value="1">Yes</option>
+                            <option value="0" selected>No</option>
+                        </select>
+                    </div>
+                    <div class="col-sm-1" style="padding-top:15px">
+                        <a role="button" class="pull-right btn-new-mail" data-toggle="modal" id="search">
+                            <span class="btn btn-purple no-border">
+                                <i class="menu-icon fa fa-search"></i>
+                                <span class="bigger-110">Search</span>
+                            </span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-xs-12">
+
+            <div class="row">
+                <div class="col-sm-10">
+                    <div class="col-sm-2">
+                        Page Size: <select id="cmbPageSizeSearch">
+                            <option value="10" selected>10</option>
+                            <option value="20">20</option>
+                            <option value="30">30</option>
+                        </select>
+
+                    </div>
+                    <div class="col-sm-2">
+                        <span id="spResultsFound"> </span>
+                    </div>
+                    <div class="col-sm-6">
+                        <ul class="pagination pull-right no-margin"></ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-xs-12">
+            <!-- PAGE CONTENT BEGINS -->
+            <div class="row">
+                <div class="col-xs-12">
+                    <div class="message-list-container">
+                        <div class="message-list" id="Users">
+                            <table id="simple-table" class="table  table-bordered table-hover"></table>
+                        </div>
+                    </div>
+                </div>
+            </div><!-- /.row -->
+        </div>
+    </div><!-- /.page-header -->
+</div>
+
+
+@section PopupsAndTemplates
+{
+    @{
+        Html.RenderAction("YesNoModal", "Partial");
+    }
+    
+    <div id="EditRolesModal" tabindex="-1" class="modal" data-backdrop="static" data-keyboard="false">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="primary bigger">
+                        Roles Assignment
+                        <button type="button" id="closeedit" class="close" data-dismiss="modal">×</button>
+                    </h4>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-xs-12 col-sm-11">
+                            <div class="space-4"></div>
+                            <div class="row">
+                                <div id="draggable" style="max-height:250px;overflow-y:auto">
+                                    <ol id="sortable1" style="list-style-type:none"></ol>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-sm" data-dismiss="modal" id="CancelPermModal">
+                        <i class="ace-icon fa fa-times"></i>
+                        Cancel
+                    </button>
+                    <button class="btn btn-sm btn-primary" id="SaveMappings">
+                        <i class="ace-icon fa fa-check"></i>
+                        Save
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script id="UserTemplate" type="text/x-handlebars-template">
+        <thead>
+            <tr>
+                <th class="center">#</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Request On</th>
+                <th>User ID</th>
+                <th>Approved On</th>
+                <th scope="col" width="5%">Create User</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {{#each UserList}}
+            <tr id="{{Email}}">
+
+                <td align="center" class="studentids" name="UserId1">{{ID}}</td>
+                <td name="Name" id="Name" value="{{Name}}">{{Name}}</td>
+                <td name="Email" id="Email">{{Email}}</td>
+                <td name="Email" id="Email">{{EntryTimeOnStr}}</td>
+                <td id="Email">{{UserId}}</td>
+                <td id="Email">
+                    {{#ifEqual IsUsed true }}
+                        {{UserCreatedOnStr}}
+                    {{/ifEqual }}
+                </td>
+
+                <td align="center" align="middle">
+                    <div class="tblActions">
+                        {{#ifEqual IsUsed false }}
+                        <a role="button" data-toggle="modal" class="edit btn-xs btn-new-mail  btn btn-purple no-border lnkEditMapping" title="Click to edit" id="editMapping">
+                            <i class="menu-icon fa fa-pencil-square-o "></i>
+                            <span class="bigger-110"></span>
+                        </a>
+                        {{/ifEqual }}
+                        {{#ifEqual IsUsed true }}
+                        <a href="#" class="btn btn-xs btn-round">
+                            <i class="ace-icon icon-lock"></i>
+                        </a>
+                        {{/ifEqual }}
+                    </div>
+                </td>
+            </tr>
+        </tbody>
+        {{/each}}
+    </script>
+    <script id="RoleTemplate" type="text/x-handlebars-template">
+        {{#each RoleList}}
+        <li class="dd-handle nondrag" id="{{Id}}">
+            <input type="radio" name="rolesData">
+            {{Name}}
+        </li>
+        {{/each}}
+    </script>
+
+}

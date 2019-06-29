@@ -1,0 +1,1030 @@
+﻿@{
+    Layout = "~/Views/Shared/_MainLayout.cshtml";
+}
+@section Header
+{
+       @Scripts.Render("~/bundles/applications")
+}
+@section scripts
+{
+    <script type="text/javascript">
+
+        $(document).ready(function () {
+            MyWebApp.UI.Applications.readyMain();
+        });
+    </script>
+}
+@section BreadCrumb
+{
+    <li>
+        <a href='@Url.Content("~/Home/")'>Home</a>
+    </li>
+    <li>
+        <a href='@Url.Content("~/Home/FormApplications/")'>New Application </a>
+    </li>
+}
+<div class="page-content">
+    <div class="row">
+        <div class="col-xs-6 col-md-4">
+            <h1>New Application
+                <small>
+                    <i class="ace-icon fa fa-angle-double-right"></i>
+                    Select a form
+                </small>
+            </h1>
+        </div>
+        <div class="col-xs-6 col-md-4">
+            <select class="form-control" id="item_select" style="width: 400px; margin-top: 25px" autofocus>
+                <option id="non" selected disabled>Choose one</option>
+                <option value="13">GENERAL REQUEST FORM</option>
+                <option value="8">BONAFIDE/CHARACTER CERTIFICATE FORM</option>
+                <option value="1">CLEARANCE FORM</option>
+                <option value="5">COLLEGE ID CARD FORM</option>
+                <option value="12">COURSE(S) WITHDRAWAL FORM</option>
+                <option value="4">FINAL ACADAEMIC TRANSCRIPT FORM</option>
+                <option value="2">LEAVE APPLICATION FORM</option>
+                <option value="6">MOTORCYCLE TOKEN FORM</option>
+                <option value="3">OPTION FOR BSc DEGREE</option>
+                <option value="7">RECEIPT OF ORIGINAL EDUCATIONAL DOCUMENTS FORM</option>
+                <option value="11">SEMESTER ACADAEMIC TRANSCRIPT FORM</option>
+                <option value="9">SEMESTER FREEZE/WITHDRAWAL FORM</option>
+                <option value="10">SEMESTER RE-JOIN FORM</option>
+            </select>
+        </div>
+        <div class="col-xs-6 col-md-4"></div>
+    </div>
+    <div class="hr hr-18 dotted hr-double"></div>
+    <div class="col-md-8"></div>
+    <div class="row">
+        <div class="col-xs-12">
+            <div class="col-md-2"></div>
+            <div class="col-md-8">
+                <div class="widget-box" id="widget_box_main" style="display: none">
+                    <div class="widget-header">
+                        <h4 class="widget-title" id="formTitle"></h4>
+                        <span class="widget-toolbar" id="close">
+                            <a href="#">
+                                <i class="ace-icon fa fa-times"></i>
+                            </a>
+                        </span>
+                    </div>
+                    <div class="widget-body" id="widget_box_body" style="display: none">
+                        <div class="widget-main">
+                            <!--Common Fields at start of Form-->
+                            <div>
+                                <div class="row">
+                                    <div class="space-4"></div>
+                                    <div style="padding-left: 50px;">
+                                        <div class="col-md-3">
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="form-group">
+                                                <label for="form-field-username"><b>Name: </b></label>
+                                                <label id="name" for="form-field-username">@ViewBag.Name</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label for="form-field-first"><b>Roll No: </b></label>
+                                            &nbsp;
+                                        <label id="rollNo" class="text" for="form-field-first">@ViewBag.RollNo</label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div style="padding-left: 50px;">
+                                        <div class="col-md-3">
+                                        </div>
+                                        <div class="col-md-3" id="fatherName" style="display: none">
+                                            <label class="asterisk" for="form-field-first"><b>Father's Name : </b></label>
+                                            <br>
+                                            <label for="form-field-username">@ViewBag.FatherName</label>
+                                        </div>
+                                        <div class="col-md-3" id="Current_Semester_Div" style="display: none">
+                                            <div class="form-group">
+                                                <label class="asterisk" for="form-field-username"><b>Current Semester: </b></label>
+                                                <div id="semester_result"></div>
+                                                <select class="input-sm form-control" id="current_semester" autofocus>
+                                                    <option id="non" selected disabled>Choose one</option>
+                                                    <option value="1">1</option>
+                                                    <option value="2">2</option>
+                                                    <option value="3">3</option>
+                                                    <option value="4">4</option>
+                                                    <option value="5">5</option>
+                                                    <option value="6">6</option>
+                                                    <option value="7">7</option>
+                                                    <option value="8">8</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row" id="Section" style="display: none">
+                                    <div style="padding-left: 50px;">
+                                        <div class="col-md-3">
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label class="asterisk" for="form-field-username"><b>Section: </b></label>
+                                            <label for="form-field-username">@ViewBag.Section</label>
+                                        </div>
+                                        <div class="col-md-3">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!--Clearance Form Div-->
+                            <div id="clearanceForm" style="display: none">
+                                <div class="row">
+                                    <div style="padding-left: 50px;">
+                                        <div class="col-md-3">
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label class="asterisk" for="form-field-username"><b>Final Result Date: </b></label>
+                                            <div id="date_result"></div>
+                                            <div class="input-group">
+                                                <input class="date-picker input-sm form-control" id="clearance_finalResultDate" type="text" placeholder="MM-DD-YYYY" data-date-format="mm-dd-yyyy" />
+                                            </div>
+                                            <div class="space-4"></div>
+                                            <div class="space-4"></div>
+                                        </div>
+                                        <div class="col-md-3">
+                                        </div>
+                                        <div class="col-md-3">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!--Leave Form Div-->
+                            <div id="leaveForm" style="display: none">
+                                <div class="row">
+                                    <div style="padding-left: 50px;">
+                                        <div class="col-md-3">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div style="padding-left: 50px;">
+                                        <div class="col-md-3"></div>
+                                        <div class="col-md-3">
+                                            <label class="asterisk" for="form-field-username"><b>Leave Duration: </b></label>
+                                            <div id="daterange_result_leave"></div>
+                                            <div class="input-group">
+                                                <input class="date-picker" id="startDate" type="text" placeholder="MM-DD-YYYY" data-date-format="mm-dd-yyyy" />
+                                                <span class="input-group-addon">To
+                                                </span>
+                                                <input class="date-picker" id="endDate" type="text" placeholder="MM-DD-YYYY" data-date-format="mm-dd-yyyy" />
+                                            </div>
+                                            <div class="space-4"></div>
+                                            <div class="space-4"></div>
+                                        </div>
+                                        <div class="col-md-3">
+                                        </div>
+                                        <div class="col-md-3">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div style="padding-left: 50px;">
+                                        <div class="col-md-3">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label for="form-field-first"><b>Note:</b></label>
+                                                <p>1.Leave will not be counted as presence towards attendance requirement.</p>
+                                                <p>2.Leave on medical grounds will be governed by PUCIT statutes.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!--Option for bsc Form Div-->
+                            <div id="optionsForBsc" style="display: none">
+                                <div class="row">
+                                    <div style="padding-left: 50px;">
+                                        <div class="col-md-3">
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label class="asterisk" for="form-field-first"><b>CNIC : </b></label>
+                                            <div id="bsc_cnic_result"></div>
+                                            <input type="text" placeholder="12345-1234567-1" maxlength="15" class="input-sm form-control" id="optionsForBsc_CNIC" />
+                                        </div>
+                                        <div class="col-md-3">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div style="padding-left: 50px;">
+                                        <div class="col-md-3">
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label for="form-field-username"><b>PU Registration No : </b></label>
+                                            <div id="bsc_PUreg_result"></div>
+                                            <input id="optionsForBsc_puReg" maxlength="12" placeholder="1234_XXX_567" type="text" class="input-sm form-control"><br />
+                                        </div>
+                                        <div class="col-md-3">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div style="padding-left: 50px;">
+                                        <div class="col-md-3">
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label class="asterisk" for="form-field-username"><b>Date of Birth : </b></label>
+                                            <div id="bsc_date_result"></div>
+                                            <div class="input-group">
+                                                <input class="date-picker12 input-sm form-control" id="optionsForBsc_DOB" type="text" placeholder="MM-DD-YYYY" data-date-format="mm-dd-yyyy" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="space-4"></div>
+                                <div class="space-4"></div>
+                                <div class="row">
+                                    <div style="padding-left: 50px;">
+                                        <div class="col-md-3">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label for="form-field-first"><b>Note:</b></label><br />
+                                                <p>
+                                                    I undertake to opt for an exit after completion of study of the first two years of my BS(Hons Degree).
+                                                    I have no objection for award of 02 years Bachelor degree to me.
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div style="padding-left: 50px;">
+                                        <div class="col-md-3"></div>
+
+                                        <div class="col-md-3">
+                                            <div class="form-group">
+                                                <label class="asterisk" for="form-field-username"><b>Thumb Impression of Applicant's Parent/Guardian: </b></label>
+                                                <div class="space-4"></div>
+                                                <textarea id="optionsForBsc_thumbImpression" class="form-control limited" maxlength="200"></textarea>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="form-group">
+                                                <label class="asterisk" for="form-field-username"><b>Signature of Applicant: </b></label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div style="padding-left: 50px;">
+                                        <div class="col-md-3"></div>
+                                        <div class="col-md-4">
+                                            <div class="form-group">
+                                                <label class="asterisk" for="form-field-first"><b>Attachments:  (.jpg, .gif, .png) </b></label>
+                                                <br />
+                                                <div id="bsc_Attach_result"></div>
+                                                <ul>
+                                                    <li>Applicants Father's CNIC
+                                                        <div class="space-4"></div>
+                                                        <input type="file" id="applicantsFathersCnic" />
+                                                    </li>
+                                                    <li>Applicant's CNIC
+                                                        <div class="space-4"></div>
+                                                        <div class="form-group">
+                                                            <input type="file" id="applicantsCnic" />
+                                                        </div>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!--Final Acadamic Form Div-->
+                            <div id="finalAcademic" style="display: none">
+                                <div class="row">
+                                    <div style="padding-left: 50px;">
+                                        <div class="col-md-3"></div>
+                                        <div class="col-md-3">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div style="padding-left: 50px;">
+                                        <div class="col-md-3">
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="form-group">
+                                                <label for="form-field-username"><b>PU Registration No: </b></label>
+                                                <div id="PUreg_result_Acad"></div>
+                                                <input type="text" class="input-sm form-control" maxlength="12" placeholder="1234_XXX_567" id="finalAcademic_PU">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label class="asterisk" for="form-field-username"><b>Final Project Title: </b></label>
+                                            <div id="fyp_result_Acad"></div>
+                                            <div class="input-group">
+                                                <input type="text" maxlength="40" class="input-sm form-control" id="finalAcademic_FYPTitle">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div style="padding-left: 50px;">
+                                        <div class="col-md-3">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-group">
+                                                <label class="asterisk" for="form-field-username"><b>Attachments:  (.jpg, .gif, .png)</b></label>
+                                                <div id="Attachments_result_Acad"></div>
+                                                <ul>
+                                                    <li>Clearance Form Copy
+                                                        <div class="space-4"></div>
+                                                        <input type="file" id="finalAcademicAttachment" />
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- College ID card Form Div-->
+                            <div id="collegeIdCard" style="display: none">
+                                <div class="space-4"></div>
+                                <div class="row">
+                                    <div style="padding-left: 50px;">
+                                        <div class="col-md-3">
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label class="asterisk" for="form-field-username"><b>Challan No: </b></label>
+                                            <div id="challan_result_ID"></div>
+                                            <input id="collegeIdCard_challan" placeholder="123456789_1" type="text" class="input-sm form-control" maxlength="11">
+                                        </div>
+                                        <div class="col-md-3">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div style="padding-left: 50px;">
+                                        <div class="col-md-3">
+                                        </div>
+
+                                        <div class="col-md-3">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="space-4"></div>
+                                <div class="row">
+                                    <div style="padding-left: 50px;">
+                                        <div class="col-md-3">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-group">
+                                                <label class="asterisk" for="form-field-username"><b>Attachments:  (.jpg, .gif, .png)</b></label>
+                                                <div id="attach_result_ID"></div>
+                                                <ul>
+                                                    <li>Challan Form copy
+                                                        <div class="space-4"></div>
+                                                        <input type="file" id="collegeIdCardAttachment" />
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!--Receipt of orignal documents Form Div-->
+                            <div id="receiptOfOriginal" style="display: none">
+                                <div class="row">
+                                    <div style="padding-left: 50px;">
+                                        <div class="col-md-3">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="space-4"></div>
+                                <div class="space-4"></div>
+                                <div class="row">
+                                    <div style="padding-left: 50px;">
+                                        <div class="col-md-3">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <p>
+                                                    <font color="blue"> Want to recieve following original educational documents:</font>
+                                                </p>
+                                                <div id="d_doc"></div>
+                                                <input id="receiptOfOriginal_matric" type="checkbox" value="Matriculation Certificate">&nbsp; MatriculationCertificate<br>
+                                                <input id="receiptOfOriginal_inter" type="checkbox" value="Intermediate Certificate">&nbsp;  Intermediate Certificate<br>
+                                                <input id="receiptOfOriginal_bs" type="checkbox" value="BSc Certifcate" />&nbsp; BSc Certificate<br>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="space-4"></div>
+                                <div class="space-4"></div>
+                                <div class="row">
+                                    <div style="padding-left: 50px;">
+                                        <div class="col-md-3">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-group">
+                                                <label class="asterisk" for="form-field-username"><b>Attachments:  (.jpg, .gif, .png)</b></label>
+                                                <div id="d_attach"></div>
+                                                <ul>
+                                                    <li>College ID Card
+                                                        <div class="space-4"></div>
+                                                        <input type="file" id="receiptOfOriginalAttachment" />
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!--Bonafide form Div-->
+                            <div id="bonafide" style="display: none">
+                                <div class="row">
+                                    <div style="padding-left: 50px;">
+                                        <div class="col-md-3">
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="form-group">
+                                                <label class="asterisk" for="form-field-username"><b>CGPA: </b></label>
+                                                <div id="b_gpa"></div>
+                                                <input type="text" class="input-sm form-control" placeholder="1.23" id="bonafide_CGPA" maxlength="4" />
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label for="form-field-first"><b>PU Registration No: </b></label>
+                                            &nbsp;
+                                            <div id="b_reg"></div>
+                                            <input type="text" class="input-sm form-control" maxlength="12" placeholder="1234_XXX_567" id="bonafide_PuRegistration" />
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="space-4"></div>
+                                <div class="space-4"></div>
+                                <div class="row">
+                                    <div style="padding-left: 50px;">
+                                        <div class="col-md-3">
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label for="form-field-username"><b>Challan No: </b></label>
+                                            <div id="b_challan"></div>
+                                            <input id="bonafideChallan" placeholder="123456789_1" maxlength="11" type="text" class="input-sm form-control"><br />
+                                        </div>
+                                        <div class="col-md-3">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="space-4"></div>
+                                <div class="space-4"></div>
+                                <div class="row">
+                                    <div style="padding-left: 50px;">
+                                        <div class="col-md-3">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-group">
+                                                <label for="form-field-username"><b>Attachments:  (.jpg, .gif, .png)</b></label>
+                                                <div id="b_attachC"></div>
+                                                <ul>
+                                                    <li>Challan Form copy
+                                                        <div class="space-4"></div>
+                                                        <input type="file" id="bonafideAttachment" />
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!--Vehical Token form Div-->
+                            <div id="vehicleToken" style="display: none">
+                                <div class="space-4"></div>
+                                <div class="space-4"></div>
+                                <div class="row">
+                                    <div style="padding-left: 50px;">
+                                        <div class="col-md-3">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-group">
+                                                <label class="asterisk" for="form-field-first"><u><b>Motorcycle Specifications: </b></u></label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div style="padding-left: 50px;">
+                                        <div class="col-md-3">
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label class="asterisk" for="form-field-username"><b>Model: </b></label>
+                                            <div id="v_model"></div>
+                                            <input id="vehicle_model" type="text" class="input-sm form-control"><br />
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label class="asterisk" for="form-field-username"><b>Registration No: </b></label>
+                                            <div id="v_Reg"></div>
+                                            <input id="vehicle_regNo" type="text" class="input-sm form-control"><br />
+                                        </div>
+                                        <div class="space-4"></div>
+                                        <div class="space-4"></div>
+                                        <div class="col-md-3">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div style="padding-left: 50px;">
+                                        <div class="col-md-3">
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label class="asterisk" for="form-field-username"><b>Manufacturer: </b></label>
+                                            <div id="v_manu"></div>
+                                            <input id="vehicle_manufacturer" type="text" class="input-sm form-control"><br />
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label class="asterisk" for="form-field-username"><b>Owners Name: </b></label>
+                                            <div id="v_owner"></div>
+                                            <input id="vehicle_ownersName" type="text" class="input-sm form-control"><br />
+                                        </div>
+                                        <div class="col-md-3">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="space-4"></div>
+                                <div class="space-4"></div>
+                                <div class="row">
+                                    <div style="padding-left: 50px;">
+                                        <div class="col-md-3">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-group">
+                                                <label class="asterisk" for="form-field-username"><b>Attachments:  (.jpg, .gif, .png)</b></label>
+                                                <ul>
+                                                    <li>Colored Photograph
+                                                        <div class="space-4"></div>
+                                                        <div id="v_photo"></div>
+                                                        <input type="file" id="vehicle_photo" />
+                                                    </li>
+                                                    <li>Motorcycle Registration Attested Copy
+                                                        <div class="space-4"></div>
+                                                        <div id="v_register"></div>
+                                                        <input type="file" id="vehicle_registration" />
+                                                    </li>
+                                                    <li>College ID Card
+                                                        <div class="space-4"></div>
+                                                        <div id="v_IDcard"></div>
+                                                        <input type="file" id="vehicleIDcard" />
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!--Semester withdraw/freeze form Div-->
+                            <div id="semesterFreeze_Withdrawal" style="display: none">
+                                <div class="row">
+                                    <div style="padding-left: 50px;">
+                                        <div class="col-md-3">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div style="padding-left: 50px;">
+                                        <div class="col-md-3">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="asterisk" for="form-field-first"><b>Semester to Freeze/Withdraw: </b></label>
+                                            <div id="f_with"></div>
+                                        </div>
+                                        <div class="col-md-3">
+                                        </div>
+                                        <div class="col-md-3">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div style="padding-left: 50px;">
+                                        <div class="col-md-3">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <input id="semesterFreeze_Withdrawal_1" name="freeze" type="radio" value="1" />1&nbsp;&nbsp;
+                                                <input id="semesterFreeze_Withdrawal_2" name="freeze" type="radio" value="2" />2&nbsp;&nbsp;
+                                                <input id="semesterFreeze_Withdrawal_3" name="freeze" type="radio" value="3" />3&nbsp;&nbsp;
+                                                <input id="semesterFreeze_Withdrawal_4" name="freeze" type="radio" value="4" />4&nbsp;&nbsp;
+                                                <input id="semesterFreeze_Withdrawal_5" name="freeze" type="radio" value="5" />5&nbsp;&nbsp;
+                                                <input id="semesterFreeze_Withdrawal_6" name="freeze" type="radio" value="6" />6&nbsp;&nbsp;
+                                                <input id="semesterFreeze_Withdrawal_7" name="freeze" type="radio" value="7" />7&nbsp;&nbsp;
+                                                <input id="semesterFreeze_Withdrawal_8" name="freeze" type="radio" value="8" />8&nbsp;&nbsp;
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                        </div>
+                                        <div class="col-md-3">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!--Semester Rejoin form Div-->
+                            <div id="semesterRejoin" style="display: none">
+                                <div class="row">
+                                    <div style="padding-left: 50px;">
+                                        <div class="col-md-3">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="asterisk" for="form-field-first"><b>Semester to Rejoin: </b></label>
+                                            <div id="rejoin_sem"></div>
+                                        </div>
+                                        <div class="col-md-3">
+                                        </div>
+                                        <div class="col-md-3">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div style="padding-left: 50px;">
+                                        <div class="col-md-3">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <input id="semester_rejoin_1" type="radio" name="choose" value="1" />1&nbsp;&nbsp;
+                                                <input id="semester_rejoin_2" type="radio" name="choose" value="2" />2&nbsp;&nbsp;
+                                                <input id="semester_rejoin_3" type="radio" name="choose" value="3" />3&nbsp;&nbsp;
+                                                <input id="semester_rejoin_4" type="radio" name="choose" value="4" />4&nbsp;&nbsp;
+                                                <input id="semester_rejoin_5" type="radio" name="choose" value="5" />5&nbsp;&nbsp;
+                                                <input id="semester_rejoin_6" type="radio" name="choose" value="6" />6&nbsp;&nbsp;
+                                                <input id="semester_rejoin_7" type="radio" name="choose" value="7" />7&nbsp;&nbsp;
+                                                <input id="semester_rejoin_8" type="radio" name="choose" value="8" />8&nbsp;&nbsp;
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                        </div>
+                                        <div class="col-md-3">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!--Semester Acadamic form Div-->
+                            <div id="semesterAcademic" style="display: none">
+                                <div class="space-4"></div>
+                                <div class="row">
+                                    <div style="padding-left: 50px;">
+                                        <div class="col-md-3">
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label class="asterisk" for="form-field-username"><b>Challan Form No:</b></label>
+                                            <div id="a_challan"></div>
+                                            <input id="semesterAcademic_challan" placeholder="123456789_1" type="text" class="input-sm form-control" maxlength="11">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div style="padding-left: 50px;">
+                                        <div class="col-md-3">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <p>
+                                                    <font color="blue">Transcript Required For Semester(s)</font>
+                                                </p>
+                                                <div id="a_rsemeter"></div>
+                                                <input id="semesterAcademic_semester1" name="acadsemester" type="radio" />1 &nbsp;
+                                                <input id="semesterAcademic_semester2" name="acadsemester" type="radio" />2 &nbsp;
+                                                <input id="semesterAcademic_semester3" name="acadsemester" type="radio" />3 &nbsp;
+                                                <input id="semesterAcademic_semester4" name="acadsemester" type="radio" />4 &nbsp;
+                                                <input id="semesterAcademic_semester5" name="acadsemester" type="radio" />5 &nbsp;
+                                                <input id="semesterAcademic_semester6" name="acadsemester" type="radio" />6 &nbsp;
+                                                <input id="semesterAcademic_semester7" name="acadsemester" type="radio" />7 &nbsp;
+                                                <input id="semesterAcademic_semester8" name="acadsemester" type="radio" />8 &nbsp;
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div style="padding-left: 50px;">
+                                        <div class="col-md-3">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-group">
+                                                <label class="asterisk" for="form-field-username"><b>Attachments:   (.jpg, .gif, .png)</b></label>
+                                                <ul>
+                                                    <li>Challan Form
+                                                        <div class="space-4"></div>
+                                                        <div id="a_challanForm"></div>
+                                                        <input type="file" id="semesterAcademic_reason_challan" />
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                        </div>
+                                        <div class="col-md-3">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!--Course withdraw-->
+                            <div id="courseWithdraw" style="display: none">
+                                <div class="space-4"></div>
+                                <div class="space-4"></div>
+                                <div class="row">
+                                    <div style="padding-left: 50px;">
+                                        <div class="col-md-3">
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="form-group">
+                                                <label class="asterisk" for="form-field-first"><u><b>Course Details: </b></u></label>
+                                                <div id="course_result"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-3">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <table class="table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Course Code</th>
+                                                    <th>Title</th>
+                                                    <th>Credit hours</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr>
+                                                    <td>
+                                                        <input type="text" id="code1" placeholder="course code" style="border: none" /></td>
+                                                    <td>
+                                                        <input type="text" id="title1" placeholder="course title" style="border: none" /></td>
+                                                    <td>
+                                                        <input type="text" id="cr1" placeholder="credit hours" style="border: none" /></td>
+                                                </tr>
+                                                <tr>
+                                                    <td>
+                                                        <input type="text" id="code2" placeholder="course code" style="border: none" /></td>
+                                                    <td>
+                                                        <input type="text" id="title2" placeholder="course title" style="border: none" /></td>
+                                                    <td>
+                                                        <input type="text" id="cr2" placeholder="credit hours" style="border: none" /></td>
+                                                </tr>
+                                                <tr>
+                                                    <td>
+                                                        <input type="text" id="code3" placeholder="course code" style="border: none" /></td>
+                                                    <td>
+                                                        <input type="text" id="title3" placeholder="course title" style="border: none" /></td>
+                                                    <td>
+                                                        <input type="text" id="cr3" placeholder="credit hours" style="border: none" /></td>
+                                                </tr>
+                                                <tr></tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div class="col-md-3"></div>
+                                    <div class="col-md-3"></div>
+                                </div>
+                                <div class="row">
+                                    <div style="padding-left: 50px;">
+                                        <div class="col-md-3">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label for="form-field-first"><b>Note:</b></label><br />
+                                                <p>Maximum 50% courses of a semester can be withdrawan.</p>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!--GENERAL REQUEST FORM-->
+                            <div id="generalRequest">
+                                <div class="space-4"></div>
+                                <div class="row">
+                                    <div style="padding-left: 50px;">
+                                        <div class="col-md-3">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="asterisk" for="form-field-username"><b>Subject: </b></label>
+                                            <div id="general_Subject_result"></div>
+                                            <input id="general_Subject" type="text" class="input-sm form-control" maxlength="30"><br />
+                                        </div>
+                                        <div class="col-md-3">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="space-4"></div>
+                                <div class="space-4"></div>
+                                <div class="row">
+                                    <div style="padding-left: 50px;">
+                                        <div class="col-md-3">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-group">
+                                                <label for="form-field-username"><b>Attachments: (.jpg, .gif, .png) </b></label>
+                                                <ul>
+                                                    <li>Document Name
+                                                        <div id="geneT_A1"></div>
+                                                        <input id="Attachment1" type="text" class="input-sm form-control" maxlength="20"><div class="space-4"></div>
+                                                        <div id="genera_A1"></div>
+                                                        <input type="file" id="Attach1" />
+                                                    </li>
+                                                    <li>Document Name
+                                                        <div id="geneT_A2"></div>
+                                                        <input id="Attachment2" type="text" class="input-sm form-control" maxlength="20"><div class="space-4"></div>
+                                                        <div id="genera_A2"></div>
+                                                        <input type="file" id="Attach2" />
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                        </div>
+                                        <div class="col-md-3">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!--Common Fields at end of Form-->
+                            <div>
+                                <div class="row" id="Not_Required_Reason_Div" style="display: none;">
+                                    <div style="padding-left: 50px;">
+                                        <div class="col-md-3">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label for="form-field-username"><b>Reason: </b></label>
+                                                <textarea id="not_required_reason" class="form-control" maxlength="200" rows="6"></textarea>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row" id="Required_Reason_Div" style="display: none;">
+                                    <div style="padding-left: 50px;">
+                                        <div class="col-md-3">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label class="asterisk" for="form-field-username"><b>Reason: </b></label>
+                                                <div id="reason_result"></div>
+                                                <textarea id="required_reason" class="form-control" maxlength="200" rows="6"></textarea>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="space-4"></div>
+                                <div class="space-4"></div>
+                                <div class="pull-right">
+                                    <i><font color="red">* </font>Indicates required fields.</i>
+                                </div>
+                                <div>
+                                    <div class="col-md-9"></div>
+                                    <div class="col-md-3">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="widget_footer" class="form-actions center" style="display: none">
+                        <button id="cancel" class="btn btn-sm">
+                            <i class="ace-icon fa fa-times"></i>
+                            Cancel
+                        </button>
+
+                        <button id="savedata" class="btn btn-sm btn-primary">
+                            <i class="ace-icon fa fa-check"></i>
+                            Send
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section PopupsAndTemplates
+{
+    <!--Modal POP-up-->
+    <div id="Note" class="modal" data-backdrop="static" data-keyboard="false">
+        <div class="modal-dialog" style="width:400px">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="blue bigger" id="title_formCategory"></h4>
+                </div>
+                <div class="modal-body" style="width:400px">
+                    <div class="row">
+                        <div class="col-xs-12">
+                            <div id="instruction"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-sm" data-dismiss="modal" id="cancel_instruction" name="Cancel">
+                        <i class="ace-icon fa fa-times"></i>
+                        Cancel
+                    </button>
+
+                    <button class="btn btn-sm btn-primary" name="Continue" id="Continue">
+                        <i class="ace-icon fa fa-check"></i>
+                        Continue
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="SaveAlert" class="modal in" tabindex="-1" data-backdrop="static" data-keyboard="false">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" id="AlertModalClose" data-dismiss="modal">×</button>
+                    <h4 class="blue bigger">Alert</h4>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-xs-8">
+                            <p>Do you want to continue?</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-sm" data-dismiss="modal" id="cancel_instruction" name="save_no">
+                        <i class="ace-icon fa fa-times"></i>
+                        No
+                    </button>
+
+                    <button class="btn btn-sm btn-primary" id="save_yes">
+                        <i class="ace-icon fa fa-check"></i>
+                        Yes
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="SuccessMsg" class="modal in" tabindex="-1" data-backdrop="static" data-keyboard="false">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" id="SuccessMsgClose" data-dismiss="modal">×</button>
+                    <h4 class="blue bigger">Success</h4>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-xs-12">
+                            <p>Your application has been sent successfully to the Approver. Process will take 2-3 working days. Thank you!  </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-sm btn-primary" id="viewApplication">
+                        View Application
+                    </button>
+                    <button class="btn btn-sm btn-primary" id="ViewInbox">
+                        View Inbox
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        $('.date-picker12').datepicker({
+            datepicker: true,
+            autoclose: true,
+            todayHighlight: true,
+            changeMonth: true,
+            changeYear: true,
+            dateFormat: 'mm-dd-yy',
+            startDate: '01-01-80',
+            endDate: '01-01-00'
+        });
+
+        $('.date-picker').datepicker({
+            datepicker: true,
+            autoclose: true,
+            todayHighlight: true,
+            changeMonth: true,
+            changeYear: true,
+            dateFormat: 'mm-dd-yy'
+        });
+    </script>
+}

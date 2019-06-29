@@ -1,0 +1,107 @@
+﻿@{
+    Layout = null;
+}
+
+<div id="demandForm">
+    <div class="row">
+        <div class="space-4"></div>
+        <div style="padding-left:50px;">
+            <div class="col-md-3">
+            </div>
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label for="form-field-username"><b>Name: </b> </label>
+                    <label id="name" for="form-field-username">@ViewBag.Name</label>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label for="form-field-first"><b>Designation: </b></label>&nbsp;
+                <label id="rollNo" class="text" for="form-field-first">@ViewBag.title</label>
+            </div>
+            <div class="col-md-3">
+            </div>
+            <div class="space-4"></div>
+            <div class="space-4"></div>
+        </div>
+    </div>
+    <div class="row">
+        <div style="padding-left:50px;">
+            <div class="col-md-3">
+            </div>
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label class="asterisk" for="form-field-username"><b> Select Items: </b> </label>
+                    <div id="select_item_result"></div>
+                    <select class="input-sm form-control" id="general_item" autofocus>
+                        <option id="item_non" value="0" selected disabled>Choose Item</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label class="asterisk" for="form-field-username"><b>Quantity: </b></label>
+                <div id="item_quantity"></div>
+                <input type="text" id="general_quantity" style="width:60px;height:30px;" maxlength="5" />&emsp;&emsp;&emsp;
+                <button id="addItem" style="width: 60px; height: 30px;">
+                    <b>Add</b>
+                </button>
+            </div>
+            <br>
+        </div>
+    </div>
+    <div class="space-4">
+    </div>
+    <div class="modal-body">
+        <div class="row">
+            <div class="col-sm-12">
+                <div class="col-sm-6" style="padding-left:30%">
+                    <label for="form-field-first"><b> Items Selected: </b></label>
+                    <div id="table_result"></div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="form-group">
+                <div class="col-sm-12 col-xs-12 col-sm-9 " style="padding-left:30%">
+                    <div id="draggable" style="max-height:250px;overflow-y:auto">            
+                        <table id="selecteItemsTable" class="sortabletable  table table-bordered">
+                            <div id="Itemtable_result"></div>
+                            <thead class="thin-border-bottom">
+                                <tr>
+                                    <th>Item Name</th>
+                                    <th>Quantity</th>
+                                    <th>Remove Item</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div style="padding-left:50px;">
+            <div class="col-md-3">
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label class="asterisk" for="form-field-username"><b>Purpose: </b></label>
+                    <div id="general_item_purpose_result"></div>
+                    <textarea id="general_item_purpose" class="form-control" maxlength="200" rows="6"></textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+    <br />
+    <div class="space-4"></div>
+    <div class="space-4"></div>
+    <div>
+        <div class="col-md-9"></div>
+        <div class="col-md-3">
+            <div class="pull-right">
+                <i><font color="red">* </font>Indicates required fields.</i>
+            </div>
+        </div>
+    </div>
+    <br>
+</div>

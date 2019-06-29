@@ -1,0 +1,92 @@
+﻿@{
+    Layout = null;
+}
+<div id="semesterRejoin" style="display:none">
+    <div class="row">
+        <div class="space-4"></div>
+        <div style="padding-left:50px;">
+            <div class="col-md-3">
+            </div>
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label for="form-field-username"><b>Name: </b> </label>
+                    <label id="name" for="form-field-username">@ViewBag.Name</label>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label for="form-field-first"><b>Roll No: </b></label>&nbsp;
+                <label id="rollNo" class="text" for="form-field-first">@ViewBag.RollNo</label>
+            </div>
+            <div class="col-md-3">
+            </div>
+            <div class="space-4"></div>
+            <div class="space-4"></div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div style="padding-left:50px;">
+            <div class="col-md-3">
+            </div>
+            <div class="col-md-6">
+                <label class="asterisk" for="form-field-first"><b>Semester to Rejoin: </b></label>
+                <div id="rejoin_sem"></div>
+            </div>
+            <div class="col-md-3">
+            </div>
+            <div class="col-md-3">
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div style="padding-left:50px;">
+            <div class="col-md-3">
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <input id="semester_rejoin_1" type="radio" name="choose" value="1" />1&nbsp;&nbsp;
+                    <input id="semester_rejoin_2" type="radio" name="choose" value="2" />2&nbsp;&nbsp;
+                    <input id="semester_rejoin_3" type="radio" name="choose" value="3" />3&nbsp;&nbsp;
+                    <input id="semester_rejoin_4" type="radio" name="choose" value="4" />4&nbsp;&nbsp;
+                    <input id="semester_rejoin_5" type="radio" name="choose" value="5" />5&nbsp;&nbsp;
+                    <input id="semester_rejoin_6" type="radio" name="choose" value="6" />6&nbsp;&nbsp;
+                    <input id="semester_rejoin_7" type="radio" name="choose" value="7" />7&nbsp;&nbsp;
+                    <input id="semester_rejoin_8" type="radio" name="choose" value="8" />8&nbsp;&nbsp;
+                </div>
+            </div>
+            <div class="col-md-3">
+            </div>
+            <div class="col-md-3">
+            </div>
+        </div>
+    </div>
+    <div>
+        <div class="row">
+            <div style="padding-left:50px;">
+                <div class="col-md-3">
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="form-field-username"><b>Reason: </b></label>
+
+                        <textarea id="semesterRejoin_reason" class="form-control" maxlength="200" rows="6"></textarea>
+                    </div>
+                </div>
+                <div class="space-4"></div>
+                <div class="space-4"></div>
+                <div class="col-md-3">
+                </div>
+                <div class="col-md-3">
+                </div>
+            </div>
+        </div>
+        <div>
+            <div class="col-md-9"></div>
+            <div class="col-md-3">
+                <div class="pull-right">
+                    <i><font color="red">* </font>Indicates required fields.</i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

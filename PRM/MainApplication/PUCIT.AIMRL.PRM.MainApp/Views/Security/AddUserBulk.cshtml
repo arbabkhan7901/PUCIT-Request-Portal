@@ -1,0 +1,128 @@
+﻿@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+@section Header
+{
+    @*<script type="text/javascript" src="@Url.Content("~/Scripts/mywebapp/Security/mywebapp.ui.bulkloading.js")"></script>*@
+       @Scripts.Render("~/bundles/usersbulk")
+}
+@section scripts
+{
+    <script type="text/javascript">
+        $(document).ready(function () {
+            MyWebApp.UI.Security.UserBulk.readyMain();
+        });
+    </script>
+}
+@section BreadCrumb
+{
+    <li>
+        <a href='@Url.Content("~/Security/")'>Security</a>
+    </li>
+    <li>
+        <a href='@Url.Content("~/Security/AddUserBulk/")'>Add Users Bulk</a>
+    </li>
+}
+
+<div class="page-content">  
+    <div class="row pull-right">
+           <div class="col-xs-12 col-sm-12" >
+                <span class="blue">  <i class="ace-icon fa fa-download"></i> <a href='@Url.Content("~/Sample_Data/Sample_CSV _File.csv")'> <b>Sample CSV file  </b></a></span>         
+              </div>
+           </div>
+    <div class="row pull pull-left">
+        <div style="padding-left: 50px;">
+            <div class="col-md-3">
+            </div>
+            <div class="col-md-4">
+                <div class="form-group">
+                    <div id="attach_result_ID"></div>
+                
+                      <label  for="form-field-username"><b>Upload_Students_Data_File</b></label>
+                      <input type="file" id="datafile" />
+                            <div class="space"></div>
+                            <button id="uploadfile" class="btn btn-sm btn-primary">
+                                <i class="ace-icon fa fa-upload"></i>
+                                Upload
+                            </button>
+                </div>
+            </div>
+            
+             </div>
+            <div class="col-md-3">
+            </div>
+
+        </div>
+   
+
+     <div class="row">
+        <div class="col-xs-12">
+            <!-- PAGE CONTENT BEGINS -->
+            <div class="row">
+                  <div id="error_div" class="pull-right"></div>
+                <div class="col-xs-12">
+                    <div class="message-list-container">
+                        <div class="message-list" id="students">
+                            <table id="simple-table2" class="table  table-bordered table-hover"></table>
+                        </div>
+                    </div>
+                </div>
+            </div><!-- /.row -->
+            <!-- /.modal-content -->
+        </div>
+    </div>
+    <div class="row" id="SaveBtnDiv" style="display:none">
+        <div class="col-xs-12">
+            <!-- PAGE CONTENT BEGINS -->
+            <div class="row pull-right">
+                <div class="col-xs-12">
+                    <button id="SaveBtn" class="btn btn-sm btn-primary">
+                                <i class="ace-icon fa fa-save"></i>
+                                Save
+                            </button>
+                </div>
+            </div><!-- /.row -->
+            <!-- /.modal-content -->
+        </div>
+    </div>
+    
+    <!-- PAGE CONTENT ENDS -->
+</div>
+<!-- main.cont -->
+
+@section PopupsAndTemplates
+{
+    @{
+        Html.RenderAction("YesNoModal", "Partial");
+    }
+     <script id="StudentTemplate" type="text/x-handlebars-template">
+    
+        <thead>
+            <tr id="thead">
+            
+                <th class="asterisk">Login</th>
+                <th class="asterisk">Name</th>
+                <th class="asterisk">Father Name</th>
+                <th class="asterisk">Section</th>
+                <th class="asterisk">Email</th>
+               <th class="asterisk">IsOldCampus</th>             
+            </tr>
+        </thead>
+        <tbody>
+            {{#each StudentList}}
+            <tr >
+        
+                <td contenteditable='true'>{{Login}}</td>
+                <td contenteditable='true'>{{Name}}</td>
+                <td contenteditable='true'>{{StdFatherName}}</td>
+                <td contenteditable='true'>{{Section}}</td>
+                <td contenteditable='true'>{{Email}}</td>               
+                 <td  contenteditable='false' align="center" align="middle" id={{IsOldCampus}}   >
+                     <input  type="checkbox"  {{#ifEqual IsOldCampus 1}}checked{{/ifEqual}} value="{{IsOldCampus}}"  />    
+                </td>       
+            </tr>
+            {{/each}}
+        </tbody>
+    </script>
+  
+}

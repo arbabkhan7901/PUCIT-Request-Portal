@@ -1,0 +1,315 @@
+﻿@{
+    Layout = "~/Views/Shared/_PublicLayout.cshtml";
+}
+
+
+@section Header
+{
+    @*@Scripts.Render("~/bundles/login")*@
+    <script type="text/javascript" src="@Url.Content("~/Scripts/mywebapp/user/mywebapp.ui.logon.js")?s=@DateTime.UtcNow.Ticks"></script>
+
+    @if (PUCIT.AIMRL.PRM.UI.Common.GlobalDataManager.EnableGoogleAuthentication)
+    {
+        @Scripts.Render("~/bundles/GoogleApiHelper");
+    }
+}
+@section scripts
+{
+    <script type="text/javascript">
+        $(function () {
+
+            @{
+                if (PUCIT.AIMRL.PRM.UI.Common.GlobalDataManager.EnableGoogleAuthentication)
+                {
+                    var cid = PUCIT.AIMRL.PRM.UI.Common.GlobalDataManager.G_CLIENT_ID;
+                    var rUrl = PUCIT.AIMRL.PRM.UI.Common.GlobalDataManager.G_RedirectUrl;
+                    WriteLiteral("GoogleApiHelper.setConfig({'CLIENTID':'" + cid + "','REDIRECT':'" + rUrl + "'});");
+                }
+            }
+
+            var msg = '@TempData["Msg"]';
+            if (msg) {
+                MyWebApp.UI.showRoasterMessage(msg, Enums.MessageType.Error);
+            }
+            MyWebApp.UI.Logon.readyMain();
+
+        });
+    </script>
+
+    <script type="text/javascript">
+        jQuery(function ($) {
+            $('body').attr('class', 'login-layout light-login');
+            $(document).on('click', '.toolbar a[data-target]', function (e) {
+                e.preventDefault();
+                var target = $(this).data('target');
+                $('.widget-box.visible').removeClass('visible');//hide others
+                $(target).addClass('visible');//show target
+            });
+        });
+        //you don't need this, just used for changing background
+    </script>
+}
+<div class="main-content">
+    <div class="row">
+        <div class="col-sm-10 col-sm-offset-1">
+            <div class="login-container">
+                <div class="center">
+                    <h1></h1>
+                    <img height="150" width="150" src="~/images/pucit/PUCIT_Logo_new.png" />
+                    <h1>
+
+                        <span class="blue" id="id-text2">PUCIT Request Portal</span>
+                    </h1>
+                    <h5 class="blue" id="id-company-text">Punjab University College of Information Technology</h5>
+                </div>
+
+                <div class="space-6"></div>
+
+                <div class="position-relative">
+                    <div id="login-box" class="login-box visible widget-box no-border">
+                        <div class="widget-body">
+                            <div class="widget-main">
+                                <h4 class="header blue lighter bigger">
+                                    Please Enter Your Information
+                                </h4>
+
+                                <div class="space-6"></div>
+
+                                <form>
+                                    <fieldset>
+                                        <label class="block clearfix">
+                                            <span class="block input-icon input-icon-right">
+                                                <input id="txtUserName" type="text" class="form-control" placeholder="Login/Email" />
+                                                <i class="ace-icon fa fa-user"></i>
+                                            </span>
+                                        </label>
+
+                                        <label class="block clearfix">
+                                            <span class="block input-icon input-icon-right">
+                                                <input id="txtPassword" type="password" class="form-control" placeholder="Password" />
+                                                <i class="ace-icon fa fa-lock"></i>
+                                            </span>
+                                        </label>
+
+                                        <div class="space"></div>
+                                        @if(PUCIT.AIMRL.PRM.UI.Common.GlobalDataManager.EnableRecaptcha){
+                                            <div class="g-recaptcha" data-sitekey="@PUCIT.AIMRL.PRM.UI.Common.GlobalDataManager.ReCaptchaSiteKey"></div>
+                                        }
+                                        <div class="space"></div>
+
+                                        <div class="clearfix">
+
+                                            <button type="button" class="width-35 btn btn-sm btn-primary" id="lnkLogin">
+                                                <i class="ace-icon fa fa-key"></i>
+                                                <span class="bigger-110">Login</span>
+                                            </button>
+
+                                            @if (PUCIT.AIMRL.PRM.UI.Common.GlobalDataManager.EnableGoogleAuthentication)
+                                            {
+                                            <div style="display:inline; margin:5px">OR</div>
+                                            
+                                            <button type="button" class="widget-body btn btn-sm btn-primary" id="lnkGoogle">
+                                                <i class="ace-icon fa fa-key"></i>
+                                                <span class="bigger-110">Login with Gmail</span>
+                                            </button>
+                                            }
+                                        </div>
+
+                                        <div class="space-4"></div>
+                                    </fieldset>
+                                </form>
+
+
+                                <div class="space-6"></div>
+                            </div>
+                            <!-- /.widget-main -->
+
+                            <div class="toolbar clearfix">
+                                <div>
+                                    <a href="#" data-target="#forgot-box" class="forgot-password-link">
+                                        <i class="ace-icon fa fa-arrow-left"></i>
+                                        Forgot Password
+                                    </a>
+                                </div>
+                                <button type="button" class="btn btn-primary" id="contactus" style="float:right">
+                                    <i class="ace-icon fa fa-comments"></i>
+                                    <span class="bigger-110">Contact Us</span>
+                                </button>
+                            </div>
+                        </div>
+                        <!-- /.widget-body -->
+                    </div>
+                    @*-------Forgot Password----------*@
+                    <div id="forgot-box" class="forgot-box widget-box no-border">
+                        <div class="widget-body">
+                            <div class="widget-main">
+                                <h4 class="header blue lighter bigger">
+                                    <i class="ace-icon fa fa-key"></i>
+                                    Retrieve Password
+                                </h4>
+
+                                <div class="space-6"></div>
+                                <p>
+                                    Enter your email/login to receive access code
+                                </p>
+
+                                <form>
+                                    <fieldset>
+                                        <label class="block clearfix">
+                                            <span class="block input-icon input-icon-right">
+                                                <input type="text" class="form-control" placeholder="Email/Login" id="emailID" />
+                                                <i class="ace-icon fa fa-envelope"></i>
+                                            </span>
+                                        </label>
+
+                                        <div class="clearfix">
+                                            <button type="button" class="width-35 pull-right btn btn-sm btn-primary" id="SendButton">
+                                                <i class="ace-icon fa fa-lightbulb-o"></i>
+                                                <span class="bigger-110">Send!</span>
+                                            </button>
+                                        </div>
+                                    </fieldset>
+                                </form>
+                            </div>
+                            <!-- /.widget-main -->
+
+                            <div class="toolbar center">
+                                <a href="#" data-target="#login-box" class="back-to-login-link">
+                                    Back to login
+                                    <i class="ace-icon fa fa-arrow-right"></i>
+                                </a>
+                            </div>
+                        </div>
+                        <!-- /.widget-body -->
+                    </div>
+                    <!-- /.forgot-box -->
+                    @*<div id="ContactUsModal" tabindex="-1" class="modal login-container" data-backdrop="static" data-keyboard="false" style="display:none">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <button type="button" id="ModalClose1" class="close" data-dismiss="modal">×</button>
+                                        <h4 class="blue bigger">Contact Us</h4>
+                                    </div>
+                                    <div class="modal-body">
+                                        <div class="row">
+                                            <div style="padding-left:50px;">
+                                                <div class="col-xs-5">
+                                                    <label class="asterisk" for="form-field-first"><b>Name : </b></label>
+                                                    <input type="text" class="input-sm form-control" id="name" />
+                                                </div>
+                                            </div>
+
+                                        </div>
+                                        <div class="row">
+                                            <div style="padding-left:50px;">
+                                                <div class="col-xs-5">
+                                                    <label class="asterisk" for="form-field-first"><b>Email : </b></label>
+                                                    <input type="text" class="input-sm form-control" id="email" />
+                                                </div>
+                                            </div>
+
+                                        </div>
+                                        <div class="row">
+                                            <div style="padding-left:50px;">
+
+                                                <div class="col-xs-10">
+                                                    <label class="asterisk" for="form-field-first"><b>Message   : </b></label>
+                                                    <input type="text" class="input-sm form-control" id="msg" />
+                                                </div>
+                                            </div>
+
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button class="btn btn-sm" data-dismiss="modal" id="CancelMsg">
+                                            <i class="ace-icon fa fa-times"></i>
+                                            Cancel
+                                        </button>
+                                        <button class="btn btn-sm btn-primary" id="SaveMsg">
+                                            <i class="ace-icon fa fa-check"></i>
+                                            Save
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>*@
+
+
+                    <div class="modal " id="ContactUsModal" tabindex="-1" style="display: none; padding-left: 70em; padding-top: 20em; ">
+                        <div id="login-box" style="width:410px" class="login-box visible widget-box no-border">
+                            <div class="widget-body" style="width:410px">
+                                <div class="widget-main">
+                                    <h4 class="header blue lighter bigger">Contact Us</h4>
+
+                                    <div class="space-6"></div>
+
+                                    <form class="form-horizontal">
+                                        <div class="tabbable">
+                                           
+                                            <div class="tab-content profile-edit-tab-content" style="width: 350px;height:auto;padding-top: 0px;padding-bottom: 0px;padding-right: 0px;padding-left: 0px;">
+                                                <div id="edit-password">
+                                                    <div class="space-10"></div>
+
+                                                    <div class="space-4"></div>
+                                                    <div class="form-group">
+                                                        <label class="col-sm-3 control-label no-padding-right asterisk">Name</label>
+                                                        <div class="col-sm-9">
+                                                            <input type="text" id="contactus_name" />
+                                                        </div>
+                                                    </div>
+                                                    <div class="space-4"></div>
+                                                    <div class="form-group">
+                                                        <label class="col-sm-3 control-label no-padding-right asterisk">Email</label>
+                                                        <div class="col-sm-9">
+                                                            <input type="email" id="contactus_email" />
+                                                        </div>
+                                                    </div>
+                                                    <div class="space-4"></div>
+                                                    <div class="form-group">
+                                                        <label class="col-sm-3 control-label no-padding-right asterisk">Message</label>
+                                                        <div class="col-sm-9">
+                                                            <textarea typeof="text" id="contactus_desc"></textarea>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="clearfix form-actions center">
+
+
+                                            <button class="btn btn-sm btn-info" type="button" id="saveContactus">
+                                                <i class="ace-icon fa fa-check "></i>
+                                                Save
+                                            </button>
+
+                                            <button class="btn btn-sm" id="CancelMsg">
+                                                <i class="ace-icon fa fa-close "></i>
+                                                Cancel
+                                            </button>
+                                        </div>
+
+                                    </form>
+
+
+                                    <div class="space-6"></div>
+                                </div>
+                                <!-- /.widget-main -->
+
+
+                            </div>
+                            <!-- /.widget-body -->
+                        </div>
+
+
+                    </div>
+
+                </div>
+
+            </div>
+            <!-- /.col -->
+        </div>
+        <!-- /.row -->
+    </div>
+    <!-- /.main-content -->
+</div>
+<!-- /.main-container -->

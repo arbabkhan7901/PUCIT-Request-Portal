@@ -1,0 +1,506 @@
+ALTER Procedure [dbo].[ValidateUser]
+	@Login varchar(50),
+	@Password varchar(50),
+	@CurrTime datetime,
+	@MachineIP varchar(20),
+	@IgnorePassword bit,
+	@LoggerLoginID varchar(50),
+	@Email varchar(50)
+AS 
+BEGIN
+
+	--DECLARE @Login varchar(50) = ''
+	--DECLARE @Password varchar(50) = '123'
+	--DECLARE @CurrTime datetime = getdate()
+	--DECLARE @MachineIP varchar(20) = ''
+	--DECLARE @IgnorePassword bit = 0
+	--DECLARE @LoggerLoginID varchar(50) = ''
+
+	Declare @UserId int = 0
+	Declare @iscontributor bit =0
+	Declare @isActive bit =0
+	Declare @isDisabled bit =0
+
+	if(@IgnorePassword = 0)
+	BEGIN
+		SELECT @UserId=UserId, @iscontributor=IsContributor, @isActive = IsActive ,@isDisabled =Isnull(IsDisabledForLogin,0)
+		from dbo.Users u where Login = @Login and Password = @Password 
+	END
+	else
+	BEGIN	
+		SELECT @UserId=UserId, @iscontributor=IsContributor, @isActive = IsActive ,@isDisabled =Isnull(IsDisabledForLogin,0)
+		from dbo.Users u where Login = @Login OR Email=@Email  	
+	END
+	Select UserId, Login, Password, Name, Title, Email, SignatureName, StdFatherName, Section, IsContributor, IsOldCampus, CreatedBy, CreatedOn, Modifiedby, ModifiedOn, IsActive, isnull(IsDisabledForLogin,0) as IsDisabledForLogin, ResetToken 
+	from dbo.Users where UserID = @UserId
+
+	if @UserId > 0  AND @isActive = 1 AND @isDisabled = 0
+	BEGIN
+		
+		if @iscontributor = 1
+		begin
+
+			Declare @approvers table (ApproverID int,Designation varchar(50),UserID int,IsActive bit)
+			Declare @approverid int
+
+			insert into @approvers
+			Select ApproverID,Designation,UserID,1 from dbo.vwApproverWithDesig Where UserID = @UserId
+
+			select * from @approvers
+			
+			select top 1 @approverid = ApproverId from @approvers
+
+			select @approverid
+
+		end
+
+		Select distinct r.* 
+			from dbo.Roles r INNER JOIN 
+			dbo.UserRoles ur on r.ID = ur.RoleId and ur.UserId = @UserId 
+			
+			Select distinct p.*,pm.RoleId from dbo.Permissions p 
+			INNER JOIN [dbo].[PermissionsMapping] pm on p.Id = pm.PermissionId
+			INNER JOIN dbo.UserRoles ur on pm.RoleId = ur.RoleId and ur.UserId = @UserId 
+			
+	END
+		IF @LoggerLoginID != ''
+			SET @Login = @Login + '_By_' + @LoggerLoginID
+
+		INSERT INTO dbo.LoginHistory(UserID, LoginID, MachineIP, LoginTime)
+		Select @UserId,@Login,@MachineIP,@CurrTime
+END
+
+GO
+
+alter table [dbo].[EmailRequests] add RequestID int
+
+GO
+
+ALTER Procedure [dbo].[GetEmailRequestsByUniqueID]
+	@UniqueID varchar(30)
+AS 
+BEGIN
+	
+	Select EmailRequestID, Subject, MessageBody, MessageParameters, EmailTo, EmailCC, EmailBCC, EmailTemplate, 
+	ScheduleType, ScheduleTime, EmailRequestStatus, EntryTime, UniqueID, isnull(RequestID,0) as RequestID 
+	from dbo.EmailRequests
+	Where UniqueID = @UniqueID
+
+END
+
+
+GO
+
+
+
+
+
+
+
+
+
+ALTER Procedure [dbo].[SaveRequest]
+	@RequestID int,
+	@CategoryID int,
+	@UserId int,
+	@RollNo varchar(20),
+	@CreationDate datetime,
+	@TargetSemester int,
+	@Reason varchar(200),
+	@TargetDate datetime,
+	@CurrentSemester int,
+	@Status int,
+	@Subject varchar(50),
+	@UniqueId varchar(30)	
+
+As 
+Begin
+
+	IF @RequestID = 0
+	BEGIN
+
+		Declare @IsOldCampus bit
+		Declare @to_email varchar(50)
+		Select @IsOldCampus= IsOldCampus, @to_email = email from dbo.Users where UserId = @UserId
+
+		INSERT INTO [dbo].[RequestMainData](CategoryID, UserId, RollNo, CreationDate, TargetSemester, Reason, TargetDate, CurrentSemester,  RequestStatus, Subject)
+		Values(@CategoryID, @UserId, @RollNo, @CreationDate, @TargetSemester, @Reason, @TargetDate, @CurrentSemester,   @Status, @Subject)
+
+		Select @RequestID = SCOPE_IDENTITY()
+
+		INSERT INTO [dbo].[ActivityLogTable](RequestId, UserId, Comments, Activity, ActivityTime,VisibleToUserID,CanReplyUserID)
+		Values(@RequestID, @UserId,'', @RollNo + ' created application.',@CreationDate,0,0)
+
+
+		Declare @formName varchar(100)
+		Declare @IsParalApprovalAllowed bit  = 0 
+		Declare @DefaultStatusForWF int = 1
+		Declare @DefaultIsCurrApprover bit = 0
+
+		Select @formName = upper(Category), @IsParalApprovalAllowed = IsParalApprovalAllowed 
+		from [dbo].[FormCategories] Where CategoryID = @CategoryID;
+
+		IF @IsParalApprovalAllowed = 1
+		BEGIN
+			SET @DefaultStatusForWF = 2
+			SET @DefaultIsCurrApprover = 1
+		END
+	
+
+		INSERT INTO [dbo].[ReqWorkflow](RequestID, ApproverID,UserID, ApprovalOrder, Status, Remarks, EntryTime, ActionUserID,IsCurrApprover)
+		Select @RequestID, ah.ApproverID,a.UserID, ApprovalOrder, case ApprovalOrder when 1 then 2 else @DefaultStatusForWF end as status,'',@CreationDate,  ah.ApproverID,
+		case ApprovalOrder when 1 then 1 else @DefaultIsCurrApprover end as iscurrentapprover
+		from [dbo].[ApproverHierarchy] ah inner join dbo.Approvers a on ah.ApproverID = a.ApproverID
+		Where ah.FormID = @CategoryID and (IsForNewCampus = (case when @IsOldCampus = 0 then 1 else 0 end) OR IsForOldCampus = (case when @IsOldCampus = 1 then 1 else 0 end))
+		ORDER By ApprovalOrder
+		
+
+		DECLARE @TempTable TABLE (ID INT Identity(1,1), WFID INT)
+		Declare @TempID int = 1
+		Declare @WFID int = 0
+
+
+		INSERT INTO @TempTable(WFID)
+		Select ID  From [dbo].[ReqWorkflow] Where [RequestID] = @RequestID and Status = 2
+		
+		Declare @TotalWFCount int 
+		Select @TotalWFCount = Count(*) from @TempTable
+
+		-- Add email entry for approver
+		Declare @email_subj varchar(200) = 'NEW APPLICATION ALERT - ACAD/' + cast(@RequestID as varchar);
+		Declare @email_body varchar(500) = 'You have received a new ' + @formName +' APPLICATION From Roll no: <b>' + @RollNo + '</b> , please login to Student Request Portal. <br><br> {0}'
+		
+		Declare @nextApproverUserId int
+		Declare @username varchar(100)
+		-----------------------------------------------------------
+
+		While @TempID <= @TotalWFCount
+		BEGIN 
+
+			Select @WFID = WFID from @TempTable Where ID = @TempID
+
+			Select @nextApproverUserId = rwf.ApproverID  
+			from [dbo].[ReqWorkflow] rwf 
+			Where ID = @WFID
+			
+			SELECT @to_email = email, @username = DesigWithName 
+			FROM dbo.vwApproverWithDesig WHERE ApproverID = @nextApproverUserId
+
+			INSERT INTO [dbo].[ActivityLogTable](RequestId, UserId, Comments, Activity, ActivityTime,VisibleToUserID,CanReplyUserID)
+			Values(@RequestID, @UserId, 'Assigned By System', 'Request is assigned to ' + @username,@CreationDate,0,0)
+			-----------------------------------------------------------
+
+			INSERT INTO [dbo].[EmailRequests](Subject, MessageBody, EmailTo, ScheduleType, EmailRequestStatus,UniqueID,RequestID)
+			Select @email_subj, @email_body, @to_email, 1, 1,@UniqueId,@RequestID
+
+			SET @TempID = @TempID + 1
+
+		END
+
+		-- Add email entry for requester
+		SET @email_subj = 'APPLICATION SUBMITTED - ACAD/' + cast(@RequestID as varchar);
+		SET @email_body = 'Your ' + @formName +' APPLICATION has been sent successfully, please login Student Request Portal for further information. <br><br> {0}';
+		
+		INSERT INTO [dbo].[EmailRequests](Subject, MessageBody, EmailTo, ScheduleType, EmailRequestStatus,UniqueID,RequestID)
+		Select @email_subj, @email_body, @to_email, 1, 1,@UniqueId,@RequestID
+	END
+
+	Select @RequestID
+End
+
+
+GO
+
+
+
+
+
+ALTER Procedure [dbo].[RouteBack]
+	@RequestID int,
+	@ApproverID int,
+	@ApprovalDate datetime,
+	@Remarks varchar(500),
+	@UniqueId varchar(30)
+As 
+Begin
+
+	Declare @email_subj varchar(200)
+	Declare @email_body varchar(500)
+	Declare @to_email varchar(50)
+	Declare @username varchar(100)
+
+	--Also need to handle parallel approval case
+
+	-- Find Last Approver ID
+
+		Declare @rwfId int
+		Declare @prevApproverId int
+
+		Select Top 1 @rwfId = ID,@prevApproverId = ApproverID from dbo.ReqWorkflow 
+		Where RequestID = @RequestID and Status = 3 Order by ApprovalOrder DESC
+
+		if isnull(@rwfId,0) != 0
+		BEGIN
+
+			-- Mark Current Approver as 'Not Assigned'
+			Update dbo.ReqWorkflow Set Status = 1,StatusTime = @ApprovalDate,IsCurrApprover=0 where RequestID = @RequestID and ApproverID = @ApproverID
+			
+			SET @email_subj = 'APPLICATION ACAD/' + cast(@RequestID as varchar);
+			SET @email_body = 'An appication has been un-assigned from you, please login to Student Request Portal. <br><br> {0}';
+			
+			SELECT @to_email = email, @username = DesigWithName 
+			FROM dbo.vwApproverWithDesig WHERE ApproverID = @ApproverId
+
+			INSERT INTO [dbo].[EmailRequests](Subject, MessageBody, EmailTo, ScheduleType, EmailRequestStatus,UniqueID,RequestID)
+			Select @email_subj, @email_body, @to_email, 1, 1,@UniqueId,@RequestID
+
+			INSERT INTO [dbo].[ActivityLogTable](RequestId, UserId, Comments, Activity, ActivityTime)
+			Values(@RequestID, @ApproverID, @Remarks, 'Request is [Routed Back] By ' + @username + ' to previous approver',@ApprovalDate)
+
+			
+			-- Mark Last approver status as 'Pending'
+			Update dbo.ReqWorkflow Set Status = 2,StatusTime = @ApprovalDate,IsCurrApprover=1 where ID =@rwfId
+
+			SET @email_subj = 'APPLICATION ACAD/' + cast(@RequestID as varchar);
+			SET @email_body = 'An appication has been re-assigned to you, please login to Student Request Portal. <br><br> {0}';
+			
+
+			SELECT @to_email = email, @username = DesigWithName 
+			FROM dbo.vwApproverWithDesig WHERE ApproverID = @prevApproverId
+
+
+			INSERT INTO [dbo].[EmailRequests](Subject, MessageBody, EmailTo, ScheduleType, EmailRequestStatus,UniqueID,RequestID)
+			Select @email_subj, @email_body, @to_email, 1, 1, @UniqueId,@RequestID
+
+			INSERT INTO [dbo].[ActivityLogTable](RequestId, UserId, Comments, Activity, ActivityTime)
+			Values(@RequestID, @ApproverID, 'Routed Back:' + @Remarks, 'Request is re-assigned to ' + @username,@ApprovalDate)
+
+			Select @RequestID
+		END
+		ELSE 
+		BEGIN
+			Select cast(-1 as int)
+		END
+		
+		
+End
+
+
+GO
+
+ALTER PROCEDURE [dbo].[UpdateResetPasswordToken]
+	@email_login varchar(50),
+	@guid varchar(50)
+AS
+BEGIN
+	Declare @email varchar(50) = ''
+
+	IF( Select count(*) FROM dbo.Users where login = @email_login or email = @email_login
+		And isactive = 1 and IsDisabledForLogin = 0) = 1
+	BEGIN
+		Update dbo.Users Set ResetToken=@guid 
+		where login = @email_login or email = @email_login
+		And isactive = 1 and IsDisabledForLogin = 0
+
+		SELECT @email = email FROM dbo.Users 
+		where login = @email_login or email = @email_login
+		And isactive = 1 and IsDisabledForLogin = 0
+	END
+	
+	Select @email
+
+END
+
+
+GO
+
+ALTER Procedure [dbo].[UpdatePassword]
+@Token_Login varchar(50),
+@CurrPassword varchar(50),
+@NewPassword varchar(50),
+@CurrTime datetime,
+@ModifiedBy int,
+@IsChangePassword bit
+AS
+BEGIN
+	
+	IF @IsChangePassword = 1 -- Change Password
+	BEGIN
+		IF  (SELECT count(*) FrOM dbo.Users
+			Where Login =@Token_Login AND Password = @CurrPassword and IsActive = 1 and IsDisabledForLogin =0) = 1
+		BEGIN
+			Update dbo.Users set Password = @NewPassword, ModifiedBy =@ModifiedBy, ModifiedOn = @CurrTime 
+			Where Login =@Token_Login AND Password = @CurrPassword and IsActive = 1 and IsDisabledForLogin =0
+			Select cast(1 as bit)
+			RETURN;
+		END
+	END
+	ELSE  -- RESET Password
+	BEGIN
+		IF (Select count(*) from dbo.users Where ResetToken =@Token_Login  and IsActive = 1) = 1
+		BEGIN
+			Update dbo.Users set Password = @NewPassword, ModifiedBy =@ModifiedBy, ModifiedOn = @CurrTime, ResetToken=null 
+			Where ResetToken =@Token_Login  and IsActive = 1
+			Select cast(1 as bit)
+			RETURN;
+		END
+	END
+
+	Select cast(0 as bit)
+
+END
+
+
+GO
+
+
+
+ALTER Procedure [dbo].[SaveRequest]
+	@RequestID int,
+	@CategoryID int,
+	@UserId int,
+	@RollNo varchar(20),
+	@CreationDate datetime,
+	@TargetSemester int,
+	@Reason varchar(200),
+	@TargetDate datetime,
+	@CurrentSemester int,
+	@Status int,
+	@Subject varchar(50),
+	@UniqueId varchar(30)	
+
+As 
+Begin
+
+	IF @RequestID = 0
+	BEGIN
+
+		Declare @IsOldCampus bit
+		Declare @IsNewCampus bit
+
+		
+
+		Declare @to_email varchar(50)
+		Select @IsOldCampus= IsOldCampus, @to_email = email from dbo.Users where UserId = @UserId
+
+		IF @IsOldCampus = 1
+			SET @IsNewCampus = 0
+		ELSE
+			SET @IsNewCampus = 1
+
+
+		INSERT INTO [dbo].[RequestMainData](CategoryID, UserId, RollNo, CreationDate, TargetSemester, Reason, TargetDate, CurrentSemester,  RequestStatus, Subject)
+		Values(@CategoryID, @UserId, @RollNo, @CreationDate, @TargetSemester, @Reason, @TargetDate, @CurrentSemester,   @Status, @Subject)
+
+		Select @RequestID = SCOPE_IDENTITY()
+
+		INSERT INTO [dbo].[ActivityLogTable](RequestId, UserId, Comments, Activity, ActivityTime,VisibleToUserID,CanReplyUserID)
+		Values(@RequestID, @UserId,'', @RollNo + ' created application.',@CreationDate,0,0)
+
+
+		Declare @formName varchar(100)
+		Declare @IsParalApprovalAllowed bit  = 0 
+		Declare @DefaultStatusForWF int = 1
+		Declare @DefaultIsCurrApprover bit = 0
+
+		Select @formName = upper(Category), @IsParalApprovalAllowed = IsParalApprovalAllowed 
+		from [dbo].[FormCategories] Where CategoryID = @CategoryID;
+
+		IF @IsParalApprovalAllowed = 1
+		BEGIN
+			SET @DefaultStatusForWF = 2
+			SET @DefaultIsCurrApprover = 1
+		END
+	
+
+		INSERT INTO [dbo].[ReqWorkflow](RequestID, ApproverID,UserID, ApprovalOrder, Status, Remarks, EntryTime, ActionUserID,IsCurrApprover)
+		Select @RequestID, ah.ApproverID,a.UserID, ApprovalOrder, case ApprovalOrder when 1 then 2 else @DefaultStatusForWF end as status,'',@CreationDate,  ah.ApproverID,
+		case ApprovalOrder when 1 then 1 else @DefaultIsCurrApprover end as iscurrentapprover
+		from [dbo].[ApproverHierarchy] ah inner join dbo.Approvers a on ah.ApproverID = a.ApproverID
+		Where ah.FormID = @CategoryID and (IsForNewCampus =@IsNewCampus OR IsForOldCampus = @IsOldCampus)
+		ORDER By ApprovalOrder
+		
+
+		DECLARE @TempTable TABLE (ID INT Identity(1,1), WFID INT)
+		Declare @TempID int = 1
+		Declare @WFID int = 0
+
+
+		INSERT INTO @TempTable(WFID)
+		Select ID  From [dbo].[ReqWorkflow] Where [RequestID] = @RequestID and Status = 2
+		
+		Declare @TotalWFCount int 
+		Select @TotalWFCount = Count(*) from @TempTable
+
+		-- Add email entry for approver
+		Declare @email_subj varchar(200) = 'NEW APPLICATION ALERT - ACAD/' + cast(@RequestID as varchar);
+		Declare @email_body varchar(500) = 'You have received a new ' + @formName +' APPLICATION From Roll no: <b>' + @RollNo + '</b> , please login to Student Request Portal. <br><br> {0}'
+		
+		Declare @nextApproverUserId int
+		Declare @username varchar(100)
+		-----------------------------------------------------------
+
+		While @TempID <= @TotalWFCount
+		BEGIN 
+
+			Select @WFID = WFID from @TempTable Where ID = @TempID
+
+			Select @nextApproverUserId = rwf.ApproverID  
+			from [dbo].[ReqWorkflow] rwf 
+			Where ID = @WFID
+			
+			SELECT @to_email = email, @username = DesigWithName 
+			FROM dbo.vwApproverWithDesig WHERE ApproverID = @nextApproverUserId
+
+			INSERT INTO [dbo].[ActivityLogTable](RequestId, UserId, Comments, Activity, ActivityTime,VisibleToUserID,CanReplyUserID)
+			Values(@RequestID, @UserId, 'Assigned By System', 'Request is assigned to ' + @username,@CreationDate,0,0)
+			-----------------------------------------------------------
+
+			INSERT INTO [dbo].[EmailRequests](Subject, MessageBody, EmailTo, ScheduleType, EmailRequestStatus,UniqueID,RequestID)
+			Select @email_subj, @email_body, @to_email, 1, 1,@UniqueId,@RequestID
+
+			SET @TempID = @TempID + 1
+
+		END
+
+		-- Add email entry for requester
+		SET @email_subj = 'APPLICATION SUBMITTED - ACAD/' + cast(@RequestID as varchar);
+		SET @email_body = 'Your ' + @formName +' APPLICATION has been sent successfully, please login Student Request Portal for further information. <br><br> {0}';
+		
+		INSERT INTO [dbo].[EmailRequests](Subject, MessageBody, EmailTo, ScheduleType, EmailRequestStatus,UniqueID,RequestID)
+		Select @email_subj, @email_body, @to_email, 1, 1,@UniqueId,@RequestID
+	END
+
+	Select @RequestID
+End
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

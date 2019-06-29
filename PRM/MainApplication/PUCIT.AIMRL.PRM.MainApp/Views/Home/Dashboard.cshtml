@@ -1,0 +1,223 @@
+﻿@{
+    Layout = "~/Views/Shared/_MainLayout.cshtml";
+}
+@section Header{
+    @*<script type="text/javascript" src="@Url.Content("~/Scripts/mywebapp/Dashboard/mywebapp.ui.dashboard.js")"></script>*@
+
+    <script type="text/javascript" src="@Url.Content("~/Scripts/highcharts/highcharts.js")"></script>
+    @Scripts.Render("~/bundles/dashboard")
+
+    @*<link rel="stylesheet" href="~/Content/jquery-ui.min.css" />
+        <link rel="stylesheet" href="~/Content/bootstrap.min.css" />
+        <link rel="stylesheet" href="~/Content/font-awesome.min.css" />
+        <link rel="stylesheet" href="~/Content/fonts.googleapis.com.css" />*@
+    @*<link rel="stylesheet" href="~/Content/ace.min.css" class="ace-main-stylesheet" id="main-ace-style" />*@
+}
+@section scripts
+{
+    <script type="text/javascript">
+
+        $(document).ready(function () {
+            MyWebApp.UI.Dashboard.readyMain();
+        });
+    </script>
+}
+
+@section BreadCrumb
+{
+    <li>
+        <a href='@Url.Content("~/Home/")'>Dashboard</a>
+    </li>
+}
+
+<div class="page-content">
+    <div class="page-header row ">
+        <div class="col-sm-6">
+            <h1>Dashboard</h1>
+        </div>
+    </div><!-- /.page-header -->
+    <div class="row">
+        <div class="col-xs-12">
+            <!-- PAGE CONTENT BEGINS -->
+            <div class="row">
+                <div class="space-6">
+                </div>
+                <div class="col-sm-1"></div>
+                <div style="position: -webkit-sticky;position: sticky;top: 20px;" class="col-sm-4">
+                    <span id="spMessage" style="display:none">@TempData["Message"]</span>
+                    <div class="infobox-container">
+                        <a href='@Url.Content("~/Home/Inbox/0")'>
+                            <div class="infobox infobox-blue" style="width:205px;">
+                                <div class="infobox-icon">
+                                    <i class="ace-icon fa fa-envelope"></i>
+                                </div>
+                                <div class="infobox-data">
+                                    <span class="infobox-data-number" id="AllCount"></span>
+                                    <div class="infobox-content">All</div>
+                                </div>
+                            </div>
+                        </a>
+                        <a href='@Url.Content("~/Home/Inbox/2")'>
+                            <div class="infobox infobox-orange" style="width:205px;">
+                                <div class="infobox-icon">
+                                    <i class="ace-icon fa fa-clock-o bigger-125 orange"></i>
+                                </div>
+                                <div class="infobox-data">
+                                    <span class="infobox-data-number" id="PendingCount"></span>
+                                    <div class="infobox-content">
+                                        <span>Pending</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                        <a href='@Url.Content("~/Home/Inbox/3")'>
+                            <div class="infobox infobox-green" style="width:205px;">
+                                <div class="infobox-icon">
+                                    <i class="ace-icon fa fa-check-square-o"></i>
+                                </div>
+                                <div class="infobox-data">
+                                    <span class="infobox-text" id="AcceptedCount"></span>
+                                    <div class="infobox-content">
+                                        <span class="bigger-110">Accepted</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                        <a href='@Url.Content("~/Home/Inbox/4")'>
+                            <div class="infobox infobox-orange2" style="width:205px;">
+                                <div class="infobox-icon">
+                                    <i class="ace-icon fa fa-close"></i>
+                                </div>
+                                <div class="infobox-data">
+                                    <span class="infobox-data-number" id="RejectedCount"></span>
+                                    <div class="infobox-content">Rejected</div>
+                                </div>
+                            </div>
+                        </a>
+                        @if (PUCIT.AIMRL.PRM.UI.Common.SessionManager.CurrentUser.AppAccessType == PUCIT.AIMRL.PRM.Entities.Enum.ApplicationAccessType.Assigned)
+                        {
+                            <a href='@Url.Content("~/Home/Inbox/1")'>
+                                <div class="infobox infobox-pink">
+                                    <div class="infobox-icon">
+                                        <i class="ace-icon fa fa-spinner"></i>
+                                    </div>
+                                    <div class="infobox-data">
+                                        <span class="infobox-data-number" id="NotAssignedYetCount"></span>
+                                        <div class="infobox-content">
+                                            <span>Not Assigned Yet</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </a>
+                        }
+                    </div>
+                    <br />
+                    <div class="widget-box transparent">
+                        <div class="widget-header widget-header-flat">
+                            <h4 class="widget-title lighter">
+                                <i class="ace-icon fa fa-star orange"></i>
+                                Latest Pending
+                            </h4>
+                        </div>
+                        <div class="widget-body">
+                            <div class="widget-main">
+                                <table class="table table-bordered table-striped">
+                                    <thead class="thin-border-bottom">
+                                        <tr>
+                                            <th>
+                                                <i class="ace-icon fa fa-caret-right blue"></i>Login
+                                            </th>
+                                            <th>
+                                                <i class="ace-icon fa fa-caret-right blue"></i>Application Name
+                                            </th>
+                                            <th class="hidden-480">
+                                                <i class="ace-icon fa fa-caret-right blue"></i>Date
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="latestPendingTable"></tbody>
+                                </table>
+                            </div><!-- /.widget-main -->
+                        </div><!-- /.widget-body -->
+                    </div><!-- /.widget-box -->
+                </div>
+                <div class="col-sm-1"></div>
+                <div class="col-sm-5">
+                  <!--<div class="widget-box">
+                        <div class="widget-body">
+                            <div class="widget-main">
+                                @*<div id="piechart-placeholder"></div>*@
+                                <div id="chartContainer" style="width: 500px; height: 300px; margin: 0 auto"></div>
+                            </div>
+                        </div>
+                    </div>-->  
+                    <div class="timeline-container">
+                        <div class="timeline-label">
+                            <span class="label label-primary arrowed-in-right label-lg">
+                                <b>News Feed</b>
+                            </span>
+                        </div>
+                        <div id="timeline" style="padding-right:30px"></div>
+                    </div>
+                    <a id="show" name="show"><img src="@Url.Content("~/images/gallery/arrow.png")"  style="margin-left:545px;width:35px;height:35px;"></a>
+                </div> <!--/.col -->
+                <!-- PAGE CONTENT ENDS -->
+                
+            </div><!-- /.col -->
+        </div><!-- /.row -->
+    </div><!-- /.page-content -->
+</div>
+@section PopupsAndTemplates
+{
+    <!-- inline scripts related to this page -->
+
+    <script id="latestPending" type="text/x-handlebars-template">
+        {{#each Applications}}
+        <tr>
+            <td>{{RollNo}}</td>
+            <td>
+                <a href='@Url.Content("~/Home/ApplicationView/{{ApplicationId}}")'>
+                    <small>
+                        <s class="red"></s>
+                    </small>
+                    <b class="blue">{{Subject}}</b>
+                </a>
+
+            </td>
+            <td class="hidden-480">
+                <span>{{EntryTimeStr}}</span>
+            </td>
+        </tr>
+        {{/each}}
+    </script>
+
+    <script id="LogListDisplayTemplate" type="text/x-handlebars-template">
+        {{#each LogList}}
+        <div style="display:inline-block; width:580px">
+            <div class="timeline-item clearfix" aid="{{Id}}">
+                <div class="timeline-info">
+                    <a class="badge badge-info" href='@Url.Content("~/Home/ApplicationView/"){{RequestId}}' style="width:75px">Acad/{{RequestId}}</a>
+                </div>
+                <div class="widget-box transparent" style="margin-left:75px">
+                    <div class="widget-header widget-header-small">
+                        <h5 class="widget-title smaller pull-left" >
+                            <span class="grey"><b>{{Activity}}</b></span>
+                        </h5>
+                        <span class="widget-toolbar">
+                            <i class="ace-icon fa fa-clock-o bigger-110"></i>
+                            {{ActivityTimeStr}}
+                        </span>
+                    </div>
+                    {{#ifNotEqual Comments '' }}
+                    <div class="widget-body">
+                        <div class="widget-main" style="width: 40em;word-wrap: break-word;">
+                            {{Comments}}
+                        </div>
+                    </div>
+                    {{/ifNotEqual}}
+                </div>
+            </div>
+        </div>   
+        {{/each}}
+    </script>
+}

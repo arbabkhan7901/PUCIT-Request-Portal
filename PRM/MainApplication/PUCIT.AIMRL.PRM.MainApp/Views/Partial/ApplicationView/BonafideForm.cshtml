@@ -1,0 +1,69 @@
+﻿@{
+    Layout = null;
+ }
+
+<div id="bonafide" style="display:none">
+    <div class="row">
+        <div class="col-xs-12 col-sm-7" style="padding-left:10%">
+            <div>
+                <span class="blue"><label><b>Diary No. :</b></label></span>
+                <label id="DiaryNo8"></label>
+            </div>
+            <div class="space-4"></div>
+            <div>
+                <span class="blue"><label><b>Roll No. :</b></label></span>
+                <label id="rollno8"></label>
+            </div>
+        </div>
+
+        <div class="col-xs-12 col-sm-5">
+            <div>
+                <span class="blue"><label><b>Date:</b></label></span>
+                <label id="mydate8"></label>
+            </div>
+            <div class="space-4"></div>
+            <div>
+                <span class="blue"><label><b>Name :</b></label></span>
+                <label id="myname8"></label>
+            </div>
+        </div>
+    </div>
+    <div class="space-4"></div>
+    <div class="row">
+        <div class="col-xs-6 col-sm-7" style="padding-left:10%">
+            <div>
+                <span class="blue"><label><b>Father's Name :</b></label></span>
+                <label id="bonafide_fname"></label>
+            </div>
+            <div class="space-4"></div>
+            <div>
+                <span class="blue"><label><b>PU Registration No. :</b></label></span>
+                <label id="bonafide_PuRegistrationNo"></label>
+            </div>
+            <div class="space-4"></div>
+            <div>
+                <span class="blue"><label><b>Challan No. :</b></label></span>
+                <label id="bonafide_challan"></label>
+            </div>
+        </div>
+        <div class="col-xs-12 col-sm-5">
+            <div>
+                <span class="blue"><label><b>Current Semester :</b></label></span>
+                <label id="bonafide_semester"></label>
+            </div>
+            <div class="space-4"></div>
+            <div>
+                <span class="blue"><label><b>CGPA :</b></label></span>
+                <label id="bonafide_cgpa_show"></label>
+                @if (PUCIT.AIMRL.PRM.MainApp.Security.PermissionManager.PerUpdateBonaFiedCGPA && Model.IsPendingForCurrUser)
+                {
+                    <div id="b_gpa"></div>
+                                                        <input id="txtUpdatedCGPA" type="text" placeholder="1.23" maxlength="4" />
+                                                        <button id="btnUpdateCGPA">Update</button>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+

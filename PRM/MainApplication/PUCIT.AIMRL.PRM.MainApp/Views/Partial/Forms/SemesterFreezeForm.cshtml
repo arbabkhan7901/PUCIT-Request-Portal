@@ -1,0 +1,111 @@
+﻿@{
+    Layout = null;
+}
+
+<div id="semesterFreeze_Withdrawal" style="display:none">
+    <div class="row">
+        <div class="space-4"></div>
+        <div style="padding-left:50px;">
+            <div class="col-md-3">
+            </div>
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label for="form-field-username"><b>Name: </b> </label>
+                    <label id="name" for="form-field-username">@ViewBag.Name</label>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label for="form-field-first"><b>Roll No: </b></label>&nbsp;
+                <label id="rollNo" class="text" for="form-field-first">@ViewBag.RollNo</label>
+            </div>
+            <div class="col-md-3">
+            </div>
+            <div class="space-4"></div>
+            <div class="space-4"></div>
+        </div>
+    </div>
+    <div class="row">
+        <div style="padding-left:50px;">
+            <div class="col-md-3">
+            </div>
+            <div class="col-md-3">
+                <label for="form-field-username"><b>Current Semester:</b></label>
+                <div id="f_sem"></div>
+                <select class="input-sm form-control" id="semesterFreeze_Withdrawal_semester" autofocus>
+                    <option id="freeze_non" selected disabled>Choose one</option>
+                    <option id="one">1</option>
+                    <option id="2nd">2</option>
+                    <option id="3rd">3</option>
+                    <option id="4th">4</option>
+                    <option id="5th">5</option>
+                    <option id="6th">6</option>
+                    <option id="7th">7</option>
+                    <option id="8th">8</option>
+                </select>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div style="padding-left:50px;">
+            <div class="col-md-3">
+            </div>
+            <div class="col-md-6">
+                <label class="asterisk" for="form-field-first"><b>Semester to Freeze/Withdraw: </b></label>
+                <div id="f_with"></div>
+            </div>
+            <div class="col-md-3">
+            </div>
+            <div class="col-md-3">
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div style="padding-left:50px;">
+            <div class="col-md-3">
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <input id="semesterFreeze_Withdrawal_1" name="freeze" type="radio" value="1" />1&nbsp;&nbsp;
+                    <input id="semesterFreeze_Withdrawal_2" name="freeze" type="radio" value="2" />2&nbsp;&nbsp;
+                    <input id="semesterFreeze_Withdrawal_3" name="freeze" type="radio" value="3" />3&nbsp;&nbsp;
+                    <input id="semesterFreeze_Withdrawal_4" name="freeze" type="radio" value="4" />4&nbsp;&nbsp;
+                    <input id="semesterFreeze_Withdrawal_5" name="freeze" type="radio" value="5" />5&nbsp;&nbsp;
+                    <input id="semesterFreeze_Withdrawal_6" name="freeze" type="radio" value="6" />6&nbsp;&nbsp;
+                    <input id="semesterFreeze_Withdrawal_7" name="freeze" type="radio" value="7" />7&nbsp;&nbsp;
+                    <input id="semesterFreeze_Withdrawal_8" name="freeze" type="radio" value="8" />8&nbsp;&nbsp;
+                </div>
+            </div>
+            <div class="col-md-3">
+            </div>
+            <div class="col-md-3">
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div style="padding-left:50px;">
+            <div class="col-md-3">
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label class="asterisk" for="form-field-username"><b>Reason: </b></label>
+                    <div id="F_rea"></div>
+                    <textarea id="semesterFreeze_Withdrawal_reason" class="form-control" maxlength="200" rows="6"></textarea>
+                </div>
+            </div>
+            <div class="space-4"></div>
+            <div class="space-4"></div>
+            <div class="col-md-3">
+            </div>
+            <div class="col-md-3">
+            </div>
+        </div>
+    </div>
+    <div>
+        <div class="col-md-9"></div>
+        <div class="col-md-3">
+            <div class="pull-right">
+                <i><font color="red">* </font>Indicates required fields.</i>
+            </div>
+        </div>
+    </div>
+</div>

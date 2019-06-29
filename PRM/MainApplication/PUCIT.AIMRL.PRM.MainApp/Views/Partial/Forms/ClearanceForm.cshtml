@@ -1,0 +1,98 @@
+﻿@{
+    Layout = null;
+}
+
+<div id="clearanceForm" style="display:none">
+    <div class="row">
+        <div class="space-4"></div>
+        <div style="padding-left:50px;">
+            <div class="col-md-3">
+            </div>
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label for="form-field-username"><b>Name: </b> </label>
+                    <label id="name" for="form-field-username">@ViewBag.Name</label>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label for="form-field-first"><b>Roll No: </b></label>&nbsp;
+                <label id="rollNo" class="text" for="form-field-first">@ViewBag.RollNo</label>
+            </div>
+            <div class="col-md-3">
+            </div>
+            <div class="space-4"></div>
+            <div class="space-4"></div>
+        </div>
+    </div>
+    <div class="row">
+        <div style="padding-left:50px;">
+            <div class="col-md-3">
+            </div>
+            <div class="col-md-3">
+                <label class="asterisk" for="form-field-username"><b>Final Result Date: </b></label>
+                <div id="date_result"></div>
+                <div class="input-group">
+                    <input class="date-picker input-sm form-control" id="clearance_finalResultDate" type="text" placeholder="MM-DD-YYYY" data-date-format="mm-dd-yyyy" />
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label class="asterisk" for="form-field-username"><b>Library ID: </b></label>
+                <div id="library_ID"></div>
+                <div class="input-group">
+                    <input class="number input-sm form-control" id="clearance_libraryId" type="text" placeholder="----" />
+                </div>
+                <div class="space-4"></div>
+                <div class="space-4"></div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-3">
+                </div>
+                <div class="col-md-3">
+                    <ul>
+                        <li>
+                            <label><b>Picture: (.jpg, .tif, .png)</b></label>
+                            <div class="space-4"></div>
+                            <img src="~/images/placeholder/icon-user2.png" id="uploadedPic" />
+                            <div id="genera_A1"></div>
+                            <input type="file" id="uploadPicture" />
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div class="space-4"></div>
+            <div class="space-4"></div>
+            <div class="col-md-3">
+            </div>
+            <div class="col-md-3">
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div style="padding-left:50px;">
+            <div class="col-md-3">
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="form-field-username" class="asterisk"><b>Reason: </b></label>
+                    <div id="reason_result"></div>
+                    <textarea id="clearance_reason" class="form-control" maxlength="200" rows="6"></textarea>
+                </div>
+            </div>
+            <div class="space-4"></div>
+            <div class="space-4"></div>
+            <div class="col-md-3">
+            </div>
+            <div class="col-md-3">
+            </div>
+        </div>
+    </div>
+    <div>
+        <div class="col-md-9"></div>
+        <div class="col-md-3">
+            <div class="pull-right">
+                <i><font color="red">* </font>Indicates required fields.</i>
+            </div>
+        </div>
+    </div>
+</div>

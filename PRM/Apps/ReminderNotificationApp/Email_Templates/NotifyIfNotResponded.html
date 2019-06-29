@@ -1,0 +1,81 @@
+﻿<!DOCTYPE HTML PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Untitled Document</title>
+    <style>
+        #requests {
+            font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+            #requests td, #requests thead tr {
+                border: 1px solid #ddd;
+                padding: 8px;
+            }
+
+            #requests tbody tr:nth-child(even) {
+                background-color: #f2f2f2;
+            }
+
+            #requests tbody tr:hover {
+                background-color: #ddd;
+            }
+
+            #requests thead tr {
+                padding-top: 12px;
+                padding-bottom: 12px;
+                text-align: left;
+                background-color: #438EB9;
+                color: white;
+                font-weight: bold;
+            }
+    </style>
+</head>
+<body>
+    <div style="width: 100%;">
+        <!--<img src="LOGO_PATH" alt="PUCIT | Request Portal"  />-->
+        <div style="margin: 15px;">
+            <div>
+                <strong>Dear TAG_RECIPIENTNAME,</strong><br />
+                <br />
+                Here is detail of all requests assigned to you.
+                <br />
+                <br />
+                <table id="requests">
+                    <thead>
+                        <tr>
+                            <td>Designation</td>
+                            <td>All</td>
+                            <td>Pending</td>
+                            <td>Accepted</td>
+                            <td>Rejected</td>
+                            <td>Not Assigned Yet</td>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        TAG_BODY
+                    </tbody>
+                </table>
+            </div>
+            <p>
+                <span >Regards,</span><br />
+                Request Portal Team
+            </p>
+            <p style="font-size: 12px; color: #333333; border-top: dotted 1px #cccccc; padding: 10px 0;">
+                This email has been auto-generated; please direct any inquiries to<br />
+                <a href="mailto:request.portal@pucit.edu.pk">request.portal@pucit.edu.pk</a>
+            </p>
+        </div>
+        <!--<div style="font-size: 11px; color: #cccccc; margin: 15px;">
+            NOTE: The information in this email is confidential and legally privileged. It is
+            intended solely for the addressee. Access to this email by anyone else is unauthorised
+            either by forwarding or copying the content or by any other direction to any 3rd
+            party. If you are not the intended recipient, any disclosure, copying, distribution
+            or any action taken or omitted to be taken in reliance on it, is prohibited and
+            may be unlawful.
+        </div>-->
+    </div>
+</body>
+</html>
